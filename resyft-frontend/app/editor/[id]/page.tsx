@@ -1081,6 +1081,16 @@ export default function EditorPage() {
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false)
   const [activeTool, setActiveTool] = useState<'select' | 'move' | 'rotate' | 'scale' | 'pan'>('select')
 
+  // Face and edge selection state
+  const [selectedFaceInfo, setSelectedFaceInfo] = useState<import("../../../components/cad/ThreeCanvas").SelectionInfo | null>(null)
+  const [selectedEdgeInfo, setSelectedEdgeInfo] = useState<import("../../../components/cad/ThreeCanvas").SelectionInfo | null>(null)
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean
+    x: number
+    y: number
+    selectionInfo: import("../../../components/cad/ThreeCanvas").SelectionInfo | null
+  }>({ visible: false, x: 0, y: 0, selectionInfo: null })
+
   // Image upload state
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -1112,6 +1122,55 @@ export default function EditorPage() {
       setFeatureCounter(maxId + 1)
     }
   }, [project?.features])
+
+  // Handle face selection
+  const handleFaceSelect = (info: import("../../../components/cad/ThreeCanvas").SelectionInfo) => {
+    console.log('Face selected:', info)
+    setSelectedFaceInfo(info)
+    setSelectedEdgeInfo(null) // Clear edge selection
+    setSelectedFeatures([info.featureId])
+    setShowPropertiesPanel(true)
+  }
+
+  // Handle edge selection
+  const handleEdgeSelect = (info: import("../../../components/cad/ThreeCanvas").SelectionInfo) => {
+    console.log('Edge selected:', info)
+    setSelectedEdgeInfo(info)
+    setSelectedFaceInfo(null) // Clear face selection
+    setSelectedFeatures([info.featureId])
+    setShowPropertiesPanel(true)
+  }
+
+  // Handle context menu
+  const handleContextMenu = (info: import("../../../components/cad/ThreeCanvas").SelectionInfo, screenPos: { x: number, y: number }) => {
+    setContextMenu({
+      visible: true,
+      x: screenPos.x,
+      y: screenPos.y,
+      selectionInfo: info
+    })
+  }
+
+  // Handle feature double-click
+  const handleFeatureDoubleClick = (id: string) => {
+    setSelectedFeatures([id])
+    setSelectedFaceInfo(null)
+    setSelectedEdgeInfo(null)
+    setShowPropertiesPanel(true)
+  }
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        setContextMenu({ ...contextMenu, visible: false })
+      }
+    }
+    if (contextMenu.visible) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [contextMenu])
 
   // Handle image selection
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1689,7 +1748,83 @@ export default function EditorPage() {
               setSelectedFeatures([id])
               setShowPropertiesPanel(true)
             }}
+            onDoubleClickFeature={handleFeatureDoubleClick}
+            onFaceSelect={handleFaceSelect}
+            onEdgeSelect={handleEdgeSelect}
+            onContextMenu={handleContextMenu}
+            selectedFaceInfo={selectedFaceInfo}
+            selectedEdgeInfo={selectedEdgeInfo}
           />
+
+          {/* Selection hint */}
+          <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-3 py-1.5 rounded-md shadow-lg">
+            Double-click: Feature | Shift+Click: Face | Ctrl+Click: Edge
+          </div>
+
+          {/* Context Menu */}
+          {contextMenu.visible && contextMenu.selectionInfo && (
+            <div
+              className="fixed bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+            >
+              <div className="px-3 py-2 border-b border-slate-100">
+                <div className="text-xs font-semibold text-slate-900">
+                  {contextMenu.selectionInfo.selectionType === 'face' && `Face ${contextMenu.selectionInfo.faceIndex}`}
+                  {contextMenu.selectionInfo.selectionType === 'edge' && `Edge ${contextMenu.selectionInfo.edgeIndex}`}
+                  {contextMenu.selectionInfo.selectionType === 'feature' && contextMenu.selectionInfo.featureName}
+                </div>
+                <div className="text-[10px] text-slate-500">
+                  {contextMenu.selectionInfo.featureName}
+                </div>
+              </div>
+              <button
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2"
+                onClick={() => {
+                  // TODO: Add fillet operation
+                  console.log('Fillet selected', contextMenu.selectionInfo)
+                  setContextMenu({ ...contextMenu, visible: false })
+                }}
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                Fillet {contextMenu.selectionInfo.selectionType === 'edge' ? 'Edge' : 'Face'}
+              </button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2"
+                onClick={() => {
+                  // TODO: Add chamfer operation
+                  console.log('Chamfer selected', contextMenu.selectionInfo)
+                  setContextMenu({ ...contextMenu, visible: false })
+                }}
+              >
+                <Triangle className="w-3.5 h-3.5" />
+                Chamfer {contextMenu.selectionInfo.selectionType === 'edge' ? 'Edge' : 'Face'}
+              </button>
+              {contextMenu.selectionInfo.selectionType === 'face' && (
+                <button
+                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2"
+                  onClick={() => {
+                    // TODO: Add extrude operation
+                    console.log('Extrude face', contextMenu.selectionInfo)
+                    setContextMenu({ ...contextMenu, visible: false })
+                  }}
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                  Extrude Face
+                </button>
+              )}
+              <div className="border-t border-slate-100 mt-1 pt-1">
+                <button
+                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2 text-slate-500"
+                  onClick={() => {
+                    setContextMenu({ ...contextMenu, visible: false })
+                  }}
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* CAD Tool Toolbar - Left side vertical */}
           <div className="absolute top-4 left-4 flex flex-col gap-1 bg-white/95 rounded-lg shadow-lg p-1 border border-slate-200">

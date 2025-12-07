@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  // Suppress warning about multiple lockfiles
+  outputFileTracingRoot: process.cwd(),
 };
 
 export default nextConfig;

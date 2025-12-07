@@ -78,6 +78,8 @@ import {
   Ruler,
   Copy,
   Palette,
+  ImagePlus,
+  X,
 } from "lucide-react"
 
 // Dynamic import for Three.js canvas to avoid SSR issues
@@ -99,11 +101,15 @@ function FeatureTreeItem({
   projectId,
   isSelected,
   onSelect,
+  selectedFeatureIds,
+  onSelectFeature,
 }: {
   feature: Feature
   projectId: string
   isSelected: boolean
-  onSelect: (id: string) => void
+  onSelect: () => void
+  selectedFeatureIds?: string[]
+  onSelectFeature?: (id: string) => void
 }) {
   const { toggleFeatureVisibility, toggleFeatureSuppression, deleteFeature, updateFeature } = useCADStore()
   const [isExpanded, setIsExpanded] = useState(true)
@@ -134,6 +140,9 @@ function FeatureTreeItem({
       case 'hexagon':
       case 'octagonal_prism':
       case 'octagon':
+      case 'pentagonal_prism':
+      case 'pentagon':
+      case 'custom_prism':
         return <Hexagon className="w-4 h-4" />
       case 'capsule':
       case 'pipe':
@@ -211,10 +220,15 @@ function FeatureTreeItem({
       <div
         className={`flex flex-col gap-1 px-2 py-2 rounded-md cursor-pointer group transition-colors ${
           isSelected
-            ? 'bg-brand-100 text-brand-900 border border-brand-300'
-            : 'hover:bg-slate-100 border border-transparent'
+            ? 'bg-amber-50 border border-amber-300'
+            : showDetails
+            ? 'bg-slate-100 border border-slate-200'
+            : 'hover:bg-slate-50 border border-transparent'
         }`}
-        onClick={() => onSelect(feature.id)}
+        onClick={() => {
+          onSelect()
+          setShowDetails(!showDetails)
+        }}
       >
         <div className="flex items-center gap-2">
           {feature.children?.length ? (
@@ -228,7 +242,7 @@ function FeatureTreeItem({
             <span className="w-4" />
           )}
 
-          <span className={`flex-shrink-0 ${feature.visible ? 'text-brand-600' : 'text-slate-400'}`}>
+          <span className={`flex-shrink-0 ${isSelected ? 'text-amber-600' : feature.visible ? 'text-brand-600' : 'text-slate-400'}`}>
             {getFeatureIcon()}
           </span>
 
@@ -240,17 +254,6 @@ function FeatureTreeItem({
               {feature.id}
             </div>
           </div>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowDetails(!showDetails)
-            }}
-            className="p-1 hover:bg-slate-200 rounded transition-colors opacity-0 group-hover:opacity-100"
-            title={showDetails ? 'Hide Details' : 'Show Details'}
-          >
-            {showDetails ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
 
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
@@ -309,50 +312,350 @@ function FeatureTreeItem({
           </div>
         </div>
 
-        {/* Detailed information panel */}
+        {/* Editable Properties Panel */}
         {showDetails && (
-          <div className="mt-2 pt-2 border-t border-slate-200 space-y-1.5 text-xs">
-            <div className="flex items-start gap-2">
-              <Ruler className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-slate-500 font-medium">Dimensions</div>
-                <div className="text-slate-700 font-mono">{getDimensions()}</div>
+          <div className="mt-2 pt-2 border-t border-slate-200 space-y-2 text-xs" onClick={(e) => e.stopPropagation()}>
+            {/* Position */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-slate-500 font-medium">
+                <Move className="w-3 h-3" /> Position
               </div>
-            </div>
-            
-            <div className="flex items-start gap-2">
-              <Move className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-slate-500 font-medium">Position</div>
-                <div className="text-slate-700 font-mono text-[11px]">{getPosition()}</div>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-2">
-              <RotateCcw className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-slate-500 font-medium">Rotation</div>
-                <div className="text-slate-700 font-mono text-[11px]">{getRotation()}</div>
+              <div className="grid grid-cols-3 gap-1">
+                <div>
+                  <label className="text-[10px] text-slate-400">X</label>
+                  <input
+                    type="number"
+                    value={(feature.patch?.content as any)?.position?.[0] || 0}
+                    onChange={(e) => {
+                      const pos = (feature.patch?.content as any)?.position || [0, 0, 0]
+                      updateFeature(projectId, feature.id, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...(feature.patch?.content as any), position: [Number(e.target.value), pos[1], pos[2]] }
+                        }
+                      })
+                    }}
+                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400">Y</label>
+                  <input
+                    type="number"
+                    value={(feature.patch?.content as any)?.position?.[1] || 0}
+                    onChange={(e) => {
+                      const pos = (feature.patch?.content as any)?.position || [0, 0, 0]
+                      updateFeature(projectId, feature.id, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...(feature.patch?.content as any), position: [pos[0], Number(e.target.value), pos[2]] }
+                        }
+                      })
+                    }}
+                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400">Z</label>
+                  <input
+                    type="number"
+                    value={(feature.patch?.content as any)?.position?.[2] || 0}
+                    onChange={(e) => {
+                      const pos = (feature.patch?.content as any)?.position || [0, 0, 0]
+                      updateFeature(projectId, feature.id, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...(feature.patch?.content as any), position: [pos[0], pos[1], Number(e.target.value)] }
+                        }
+                      })
+                    }}
+                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                  />
+                </div>
               </div>
             </div>
 
-            {(feature.patch?.content as any)?.color && (
-              <div className="flex items-start gap-2">
-                <Palette className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0 flex items-center gap-2">
-                  <div className="text-slate-500 font-medium">Color</div>
-                  <div className="flex items-center gap-1">
-                    <div
-                      className="w-4 h-4 rounded border border-slate-300"
-                      style={{ backgroundColor: (feature.patch?.content as any)?.color }}
+            {/* Dimensions */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-slate-500 font-medium">
+                <Ruler className="w-3 h-3" /> Dimensions
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                {(feature.patch?.content as any)?.width !== undefined && (
+                  <div>
+                    <label className="text-[10px] text-slate-400">W</label>
+                    <input
+                      type="number"
+                      value={(feature.patch?.content as any)?.width || 10}
+                      onChange={(e) => {
+                        updateFeature(projectId, feature.id, {
+                          patch: {
+                            ...feature.patch,
+                            content: { ...(feature.patch?.content as any), width: Number(e.target.value) }
+                          }
+                        })
+                      }}
+                      className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                      min={1}
                     />
-                    <span className="text-slate-700 font-mono text-[11px]">
-                      {(feature.patch?.content as any)?.color}
-                    </span>
                   </div>
+                )}
+                {(feature.patch?.content as any)?.height !== undefined && (
+                  <div>
+                    <label className="text-[10px] text-slate-400">H</label>
+                    <input
+                      type="number"
+                      value={(feature.patch?.content as any)?.height || 10}
+                      onChange={(e) => {
+                        updateFeature(projectId, feature.id, {
+                          patch: {
+                            ...feature.patch,
+                            content: { ...(feature.patch?.content as any), height: Number(e.target.value) }
+                          }
+                        })
+                      }}
+                      className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                      min={1}
+                    />
+                  </div>
+                )}
+                {(feature.patch?.content as any)?.depth !== undefined && (
+                  <div>
+                    <label className="text-[10px] text-slate-400">D</label>
+                    <input
+                      type="number"
+                      value={(feature.patch?.content as any)?.depth || 10}
+                      onChange={(e) => {
+                        updateFeature(projectId, feature.id, {
+                          patch: {
+                            ...feature.patch,
+                            content: { ...(feature.patch?.content as any), depth: Number(e.target.value) }
+                          }
+                        })
+                      }}
+                      className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                      min={1}
+                    />
+                  </div>
+                )}
+                {(feature.patch?.content as any)?.radius !== undefined && (
+                  <div>
+                    <label className="text-[10px] text-slate-400">R</label>
+                    <input
+                      type="number"
+                      value={(feature.patch?.content as any)?.radius || 5}
+                      onChange={(e) => {
+                        updateFeature(projectId, feature.id, {
+                          patch: {
+                            ...feature.patch,
+                            content: { ...(feature.patch?.content as any), radius: Number(e.target.value) }
+                          }
+                        })
+                      }}
+                      className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                      min={1}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Rotation */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-slate-500 font-medium">
+                <RotateCcw className="w-3 h-3" /> Rotation
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <div>
+                  <label className="text-[10px] text-slate-400">X°</label>
+                  <input
+                    type="number"
+                    value={(feature.patch?.content as any)?.rotation?.[0] || 0}
+                    onChange={(e) => {
+                      const rot = (feature.patch?.content as any)?.rotation || [0, 0, 0]
+                      updateFeature(projectId, feature.id, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...(feature.patch?.content as any), rotation: [Number(e.target.value), rot[1], rot[2]] }
+                        }
+                      })
+                    }}
+                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400">Y°</label>
+                  <input
+                    type="number"
+                    value={(feature.patch?.content as any)?.rotation?.[1] || 0}
+                    onChange={(e) => {
+                      const rot = (feature.patch?.content as any)?.rotation || [0, 0, 0]
+                      updateFeature(projectId, feature.id, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...(feature.patch?.content as any), rotation: [rot[0], Number(e.target.value), rot[2]] }
+                        }
+                      })
+                    }}
+                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400">Z°</label>
+                  <input
+                    type="number"
+                    value={(feature.patch?.content as any)?.rotation?.[2] || 0}
+                    onChange={(e) => {
+                      const rot = (feature.patch?.content as any)?.rotation || [0, 0, 0]
+                      updateFeature(projectId, feature.id, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...(feature.patch?.content as any), rotation: [rot[0], rot[1], Number(e.target.value)] }
+                        }
+                      })
+                    }}
+                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                  />
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Color */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-slate-500 font-medium">
+                <Palette className="w-3 h-3" /> Color
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={(feature.patch?.content as any)?.color || '#3342d2'}
+                  onChange={(e) => {
+                    updateFeature(projectId, feature.id, {
+                      patch: {
+                        ...feature.patch,
+                        content: { ...(feature.patch?.content as any), color: e.target.value }
+                      }
+                    })
+                  }}
+                  className="w-8 h-6 rounded border border-slate-200 cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={(feature.patch?.content as any)?.color || '#3342d2'}
+                  onChange={(e) => {
+                    updateFeature(projectId, feature.id, {
+                      patch: {
+                        ...feature.patch,
+                        content: { ...(feature.patch?.content as any), color: e.target.value }
+                      }
+                    })
+                  }}
+                  className="flex-1 h-6 px-1 text-xs font-mono border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                />
+              </div>
+              {/* Color presets */}
+              <div className="flex gap-1 flex-wrap">
+                {['#ef4444', '#f97316', '#eab308', '#22c55e', '#3342d2', '#3b82f6', '#a855f7', '#ec4899', '#ffffff', '#1f2937'].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => {
+                      updateFeature(projectId, feature.id, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...(feature.patch?.content as any), color }
+                        }
+                      })
+                    }}
+                    className="w-5 h-5 rounded border border-slate-200 hover:scale-110 transition-transform"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Fillet - only for cube/box */}
+            {(() => {
+              const content = feature.patch?.content as any
+              const type = content?.type || content?.primitive
+              if (type !== 'cube' && type !== 'box') return null
+              return (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1 text-slate-500 font-medium">
+                    <Sparkles className="w-3 h-3" /> Fillet
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={content?.fillet_radius || 0}
+                      onChange={(e) => {
+                        const radius = Number(e.target.value)
+                        updateFeature(projectId, feature.id, {
+                          patch: {
+                            ...feature.patch,
+                            content: {
+                              ...content,
+                              fillet_radius: radius,
+                              edge_fillets: []
+                            }
+                          }
+                        })
+                      }}
+                      className="flex-1 h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                      min={0}
+                      step={0.5}
+                      placeholder="0"
+                    />
+                    <span className="text-[10px] text-slate-400">mm</span>
+                  </div>
+                  {/* Quick fillet presets */}
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3, 5].map(r => (
+                      <button
+                        key={r}
+                        onClick={() => {
+                          updateFeature(projectId, feature.id, {
+                            patch: {
+                              ...feature.patch,
+                              content: {
+                                ...content,
+                                fillet_radius: r,
+                                edge_fillets: []
+                              }
+                            }
+                          })
+                        }}
+                        className={`flex-1 h-5 text-[10px] rounded border transition-colors ${
+                          (content?.fillet_radius || 0) === r
+                            ? 'bg-brand-100 border-brand-300 text-brand-700'
+                            : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        {r === 0 ? 'None' : `${r}mm`}
+                      </button>
+                    ))}
+                  </div>
+                  {content?.edge_fillets?.length > 0 && (
+                    <div className="text-[10px] text-amber-600 flex items-center gap-1">
+                      <span>{content.edge_fillets.length} edge(s) filleted</span>
+                      <button
+                        onClick={() => {
+                          updateFeature(projectId, feature.id, {
+                            patch: {
+                              ...feature.patch,
+                              content: { ...content, edge_fillets: [], fillet_radius: 0 }
+                            }
+                          })
+                        }}
+                        className="underline hover:no-underline"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Status badges */}
             <div className="flex items-center gap-1 pt-1">
@@ -384,8 +687,10 @@ function FeatureTreeItem({
           <FeatureTreeItem
             feature={child}
             projectId={projectId}
-            isSelected={isSelected}
-            onSelect={onSelect}
+            isSelected={selectedFeatureIds?.includes(child.id) || false}
+            onSelect={() => onSelectFeature?.(child.id)}
+            selectedFeatureIds={selectedFeatureIds}
+            onSelectFeature={onSelectFeature}
           />
         </div>
       ))}
@@ -776,6 +1081,12 @@ export default function EditorPage() {
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false)
   const [activeTool, setActiveTool] = useState<'select' | 'move' | 'rotate' | 'scale' | 'pan'>('select')
 
+  // Image upload state
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+
   const project = projects.find(p => p.id === projectId)
 
   useEffect(() => {
@@ -801,6 +1112,104 @@ export default function EditorPage() {
       setFeatureCounter(maxId + 1)
     }
   }, [project?.features])
+
+  // Handle image selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setLocalMessages(prev => [...prev, { role: 'assistant', content: 'Please select a valid image file (JPG, PNG).' }])
+        return
+      }
+      setSelectedImage(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Clear selected image
+  const clearSelectedImage = () => {
+    setSelectedImage(null)
+    setImagePreview(null)
+    if (imageInputRef.current) {
+      imageInputRef.current.value = ''
+    }
+  }
+
+  // Analyze image and create CAD shapes
+  const handleAnalyzeImage = async () => {
+    if (!selectedImage || isAnalyzingImage || !project) return
+
+    setIsAnalyzingImage(true)
+    setLocalMessages(prev => [...prev, { role: 'user', content: `[Analyzing uploaded image: ${selectedImage.name}]` }])
+
+    try {
+      const formData = new FormData()
+      formData.append('image', selectedImage)
+
+      const response = await fetch('/api/analyze-image', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        setLocalMessages(prev => [...prev, { role: 'assistant', content: `Failed to analyze image: ${data.error || 'Unknown error'}` }])
+        return
+      }
+
+      // Add analysis result to chat
+      setLocalMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `I analyzed your image and found ${data.totalShapes} shape(s):\n\n${data.description}\n\nConfidence: ${data.confidence}`
+      }])
+
+      // Process patches and add features
+      if (data.patches && data.patches.length > 0) {
+        let counter = featureCounter
+
+        data.patches.forEach((patch: any) => {
+          const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+          const featureId = `feat_${String(counter).padStart(3, '0')}_${uniqueSuffix}`
+
+          const feature: Feature = {
+            id: featureId,
+            name: `${patch.content.primitive || 'Shape'} ${counter}`,
+            type: 'primitive',
+            visible: true,
+            locked: false,
+            suppressed: false,
+            patch: {
+              feature_id: featureId,
+              action: 'INSERT',
+              content: patch.content
+            }
+          }
+          addFeature(projectId, feature)
+          counter++
+        })
+
+        setFeatureCounter(counter)
+        setLocalMessages(prev => [...prev, {
+          role: 'assistant',
+          content: `Created ${data.patches.length} shapes from the image. You can edit them in the feature tree on the left.`
+        }])
+      }
+
+      // Clear the image after successful analysis
+      clearSelectedImage()
+
+    } catch (error) {
+      console.error('Image analysis error:', error)
+      setLocalMessages(prev => [...prev, { role: 'assistant', content: 'Failed to analyze image. Please try again.' }])
+    } finally {
+      setIsAnalyzingImage(false)
+    }
+  }
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || editor.isGenerating) return
@@ -895,13 +1304,14 @@ export default function EditorPage() {
               console.log('Deleting feature:', patch.feature_id)
               deleteFeature(projectId, patch.feature_id)
             } else if (patch.action === 'INSERT') {
-              // Generate a unique feature ID
-              let featureId = `feat_${String(counter).padStart(3, '0')}`
+              // Generate a truly unique feature ID with timestamp and random suffix
+              const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+              let featureId = `feat_${String(counter).padStart(3, '0')}_${uniqueSuffix}`
               console.log('Inserting feature:', featureId, 'with content:', patch.content)
-              
+
               const feature: Feature = {
                 id: featureId,
-                name: `${patch.content.primitive || 'Shape'} ${featureId.split('_')[1] || ''}`,
+                name: `${patch.content.primitive || 'Shape'} ${counter}`,
                 type: 'primitive',
                 visible: true,
                 locked: false,
@@ -915,29 +1325,34 @@ export default function EditorPage() {
               addFeature(projectId, feature)
               counter++
             } else if (patch.action === 'REPLACE') {
-              const featureId = patch.feature_id
-              const existingFeature = project.features.find(f => f.id === featureId)
-              
-              console.log('Replacing feature:', featureId, 'exists:', !!existingFeature)
-              
+              const originalFeatureId = patch.feature_id
+              const existingFeature = project.features.find(f => f.id === originalFeatureId)
+
+              console.log('Replacing feature:', originalFeatureId, 'exists:', !!existingFeature)
+
               if (existingFeature) {
-                deleteFeature(projectId, featureId)
+                deleteFeature(projectId, originalFeatureId)
               }
-              
+
+              // Generate new unique ID for replaced feature
+              const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+              const newFeatureId = `feat_${String(counter).padStart(3, '0')}_${uniqueSuffix}`
+
               const feature: Feature = {
-                id: featureId,
-                name: `${patch.content.primitive || 'Shape'} ${featureId.split('_')[1] || ''}`,
+                id: newFeatureId,
+                name: `${patch.content.primitive || 'Shape'} ${counter}`,
                 type: 'primitive',
                 visible: true,
                 locked: false,
                 suppressed: false,
                 patch: {
-                  feature_id: featureId,
+                  feature_id: newFeatureId,
                   action: 'INSERT',
                   content: patch.content
                 }
               }
               addFeature(projectId, feature)
+              counter++
             }
           })
           
@@ -1013,10 +1428,29 @@ export default function EditorPage() {
         <div className="h-6 w-px bg-slate-700" />
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-700" disabled>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-300 hover:text-white hover:bg-slate-700"
+            onClick={() => {
+              // Simple undo: delete the last feature
+              if (project && project.features.length > 0) {
+                const lastFeature = project.features[project.features.length - 1]
+                deleteFeature(projectId, lastFeature.id)
+              }
+            }}
+            disabled={!project || project.features.length === 0}
+            title="Undo last action (Ctrl+Z)"
+          >
             <Undo className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-700" disabled>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-300 hover:text-white hover:bg-slate-700 opacity-50 cursor-not-allowed"
+            disabled
+            title="Redo (coming soon)"
+          >
             <Redo className="w-4 h-4" />
           </Button>
         </div>
@@ -1161,7 +1595,7 @@ export default function EditorPage() {
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setShowSettingsDialog(false)} className="bg-teal-600 hover:bg-brand-700">
+            <Button onClick={() => setShowSettingsDialog(false)} className="bg-brand-600 hover:bg-brand-700">
               Done
             </Button>
           </DialogFooter>
@@ -1205,12 +1639,39 @@ export default function EditorPage() {
                       feature={feature}
                       projectId={projectId}
                       isSelected={editor.selectedFeatureIds.includes(feature.id)}
-                      onSelect={(id) => setSelectedFeatures([id])}
+                      onSelect={() => {
+                        setSelectedFeatures([feature.id])
+                        setShowPropertiesPanel(true)
+                      }}
+                      selectedFeatureIds={editor.selectedFeatureIds}
+                      onSelectFeature={(id) => {
+                        setSelectedFeatures([id])
+                        setShowPropertiesPanel(true)
+                      }}
                     />
                   ))
                 )}
               </div>
             </ScrollArea>
+
+            {/* Clear All Button */}
+            {project.features.length > 0 && (
+              <div className="p-3 border-t border-slate-200">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    if (confirm("Clear all features?")) {
+                      project.features.forEach(f => deleteFeature(projectId, f.id))
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear All
+                </Button>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -1224,14 +1685,18 @@ export default function EditorPage() {
             showGrid={project.settings.showGrid}
             showAxes={project.settings.showAxes}
             gridSize={project.settings.gridSize}
+            onSelectFeature={(id) => {
+              setSelectedFeatures([id])
+              setShowPropertiesPanel(true)
+            }}
           />
 
           {/* CAD Tool Toolbar - Left side vertical */}
           <div className="absolute top-4 left-4 flex flex-col gap-1 bg-white/95 rounded-lg shadow-lg p-1 border border-slate-200">
             <Button
               size="sm"
-              variant={activeTool === 'select' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'select' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
+              variant="ghost"
+              className={`w-9 h-9 p-0 ${activeTool === 'select' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
               onClick={() => setActiveTool('select')}
               title="Select (V)"
             >
@@ -1239,36 +1704,52 @@ export default function EditorPage() {
             </Button>
             <Button
               size="sm"
-              variant={activeTool === 'move' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'move' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
-              onClick={() => setActiveTool('move')}
-              title="Move (G)"
+              variant="ghost"
+              className={`w-9 h-9 p-0 ${activeTool === 'move' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
+              onClick={() => {
+                setActiveTool('move')
+                // If a feature is selected, show move instructions
+                if (editor.selectedFeatureIds.length > 0) {
+                  setShowPropertiesPanel(true)
+                }
+              }}
+              title="Move (G) - Select a shape and edit position in sidebar"
             >
               <Move className="w-4 h-4" />
             </Button>
             <Button
               size="sm"
-              variant={activeTool === 'rotate' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'rotate' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
-              onClick={() => setActiveTool('rotate')}
-              title="Rotate (R)"
+              variant="ghost"
+              className={`w-9 h-9 p-0 ${activeTool === 'rotate' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
+              onClick={() => {
+                setActiveTool('rotate')
+                if (editor.selectedFeatureIds.length > 0) {
+                  setShowPropertiesPanel(true)
+                }
+              }}
+              title="Rotate (R) - Select a shape and edit rotation in sidebar"
             >
               <RotateCcw className="w-4 h-4" />
             </Button>
             <Button
               size="sm"
-              variant={activeTool === 'scale' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'scale' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
-              onClick={() => setActiveTool('scale')}
-              title="Scale (S)"
+              variant="ghost"
+              className={`w-9 h-9 p-0 ${activeTool === 'scale' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
+              onClick={() => {
+                setActiveTool('scale')
+                if (editor.selectedFeatureIds.length > 0) {
+                  setShowPropertiesPanel(true)
+                }
+              }}
+              title="Scale (S) - Select a shape and edit dimensions in sidebar"
             >
               <Maximize2 className="w-4 h-4" />
             </Button>
             <div className="h-px bg-slate-200 my-1" />
             <Button
               size="sm"
-              variant={activeTool === 'pan' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'pan' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
+              variant="ghost"
+              className={`w-9 h-9 p-0 ${activeTool === 'pan' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
               onClick={() => setActiveTool('pan')}
               title="Pan (H)"
             >
@@ -1277,9 +1758,12 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant="ghost"
-              className="w-9 h-9 p-0"
-              onClick={() => {/* Zoom to fit */}}
-              title="Zoom to Fit (F)"
+              className="w-9 h-9 p-0 hover:bg-slate-100"
+              onClick={() => {
+                // Reset to 3D view which will reposition camera
+                setViewMode('3d')
+              }}
+              title="Reset View (F)"
             >
               <ZoomIn className="w-4 h-4" />
             </Button>
@@ -1287,7 +1771,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant="ghost"
-              className="w-9 h-9 p-0"
+              className="w-9 h-9 p-0 hover:bg-slate-100"
               onClick={() => {
                 if (editor.selectedFeatureIds.length > 0) {
                   setShowPropertiesPanel(!showPropertiesPanel)
@@ -1305,7 +1789,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === '3d' ? 'default' : 'ghost'}
-              className={editor.viewMode === '3d' ? 'bg-teal-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === '3d' ? 'bg-brand-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('3d')}
             >
               <Move3d className="w-4 h-4 mr-1" />
@@ -1314,7 +1798,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'front' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'front' ? 'bg-teal-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === 'front' ? 'bg-brand-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('front')}
             >
               Front
@@ -1322,7 +1806,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'top' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'top' ? 'bg-teal-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === 'top' ? 'bg-brand-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('top')}
             >
               Top
@@ -1330,7 +1814,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'right' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'right' ? 'bg-teal-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === 'right' ? 'bg-brand-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('right')}
             >
               Right
@@ -1338,7 +1822,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'isometric' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'isometric' ? 'bg-teal-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === 'isometric' ? 'bg-brand-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('isometric')}
             >
               <Rotate3d className="w-4 h-4 mr-1" />
@@ -1351,7 +1835,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={project.settings.showGrid ? 'default' : 'ghost'}
-              className={project.settings.showGrid ? 'bg-teal-600 hover:bg-brand-700' : ''}
+              className={project.settings.showGrid ? 'bg-brand-600 hover:bg-brand-700' : ''}
               onClick={() => updateProject(projectId, {
                 settings: { ...project.settings, showGrid: !project.settings.showGrid }
               })}
@@ -1436,28 +1920,102 @@ export default function EditorPage() {
                     </div>
                   </div>
                 )}
+                {isAnalyzingImage && (
+                  <div className="flex justify-start">
+                    <div className="bg-slate-100 rounded-lg px-3 py-2 flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-600" />
+                      <span className="text-sm text-slate-500">Analyzing image...</span>
+                    </div>
+                  </div>
+                )}
                 <div ref={chatEndRef} />
               </div>
             </ScrollArea>
 
-            <div className="p-3 border-t border-slate-200 flex-shrink-0">
+            <div className="p-3 border-t border-slate-200 flex-shrink-0 space-y-2">
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Selected image"
+                    className="max-h-32 rounded-lg border border-slate-200"
+                  />
+                  <button
+                    onClick={clearSelectedImage}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                    title="Remove image"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              {/* Input Row */}
               <div className="flex gap-2">
+                {/* Hidden file input */}
+                <input
+                  type="file"
+                  ref={imageInputRef}
+                  onChange={handleImageSelect}
+                  accept="image/jpeg,image/png,image/jpg"
+                  className="hidden"
+                />
+
+                {/* Image upload button */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={editor.isGenerating || isAnalyzingImage}
+                  title="Upload image to analyze"
+                  className="flex-shrink-0"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                </Button>
+
                 <Input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Describe a shape..."
+                  placeholder={selectedImage ? "Add description or click Analyze..." : "Describe a shape..."}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  disabled={editor.isGenerating}
+                  disabled={editor.isGenerating || isAnalyzingImage}
                   className="flex-1"
                 />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!chatInput.trim() || editor.isGenerating}
-                  className="bg-teal-600 hover:bg-brand-700"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
+
+                {/* Conditional button: Analyze if image selected, otherwise Send */}
+                {selectedImage ? (
+                  <Button
+                    onClick={handleAnalyzeImage}
+                    disabled={isAnalyzingImage}
+                    className="bg-brand-600 hover:bg-brand-700"
+                  >
+                    {isAnalyzingImage ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        Analyze
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!chatInput.trim() || editor.isGenerating}
+                    className="bg-brand-600 hover:bg-brand-700"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
+
+              {/* Help text */}
+              {selectedImage && (
+                <p className="text-xs text-slate-500">
+                  Upload an image of a geometric shape to recreate it as CAD
+                </p>
+              )}
             </div>
           </div>
         </aside>

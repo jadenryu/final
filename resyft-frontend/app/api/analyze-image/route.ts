@@ -1,32 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const IMAGE_ANALYSIS_PROMPT = `You are a CAD design analyst. Analyze this image and identify all geometric shapes, structures, and components visible.
+const IMAGE_ANALYSIS_PROMPT = `You are a CAD geometry analyzer specialized in converting images to 3D CAD models. Analyze this image and identify ALL geometric shapes that can be recreated using 3D CAD primitives.
 
-## Your Task
-1. Identify all distinct 3D shapes in the image (cubes, cylinders, spheres, cones, etc.)
-2. Estimate their relative dimensions and positions
-3. Describe the overall structure and how components relate to each other
-4. Note any details like windows, doors, decorative elements, or functional parts
+## Available CAD Primitives
+- cube/box: {"primitive": "cube", "width": mm, "height": mm, "depth": mm}
+- cylinder: {"primitive": "cylinder", "radius": mm, "height": mm}
+- sphere: {"primitive": "sphere", "radius": mm}
+- cone: {"primitive": "cone", "radius": mm, "height": mm}
+- torus: {"primitive": "torus", "radius": mm, "tube": mm}
+- pyramid: {"primitive": "pyramid", "radius": mm, "height": mm}
+- prism: {"primitive": "prism", "radius": mm, "height": mm} (triangular)
+- hexagonal_prism: {"primitive": "hexagonal_prism", "radius": mm, "height": mm}
+- pentagonal_prism: {"primitive": "pentagonal_prism", "radius": mm, "height": mm}
+- capsule: {"primitive": "capsule", "radius": mm, "height": mm}
+- hemisphere: {"primitive": "hemisphere", "radius": mm}
+- frustum: {"primitive": "frustum", "radiusTop": mm, "radiusBottom": mm, "height": mm}
+- wedge: {"primitive": "wedge", "width": mm, "height": mm, "depth": mm}
+- star: {"primitive": "star", "radius": mm, "depth": mm}
 
-## Output Format
-Provide your analysis in this exact format:
+## COORDINATE SYSTEM
+- X-axis: Left (-) to Right (+)
+- Y-axis: Down (-) to Up (+) - THIS IS THE VERTICAL AXIS
+- Z-axis: Back (-) to Front (+)
+- Origin [0, 0, 0] is at the center of the workspace
+- All dimensions in millimeters
 
-<analysis>
-[Describe what you see in the image, the overall structure, and its purpose]
-</analysis>
+## CRITICAL: POSITIONING & ORIENTATION RULES
 
-<components>
-[List each identifiable component with estimated dimensions]
-- Component 1: [shape type], approximately [dimensions], located at [position description]
-- Component 2: [shape type], approximately [dimensions], located at [position description]
-...
-</components>
+### Avoiding Overlaps
+1. CALCULATE exact positions so shapes DO NOT overlap
+2. For shapes stacked vertically: position Y = (bottom shape Y) + (bottom shape height/2) + (current shape height/2)
+3. For shapes side by side: offset X or Z by the sum of their half-widths/radii
+4. Account for the shape's CENTER being at its position (not corner)
 
-<cad_suggestion>
-[Provide a natural language description of how to recreate this in CAD, suitable for passing to a CAD AI assistant]
-</cad_suggestion>
+### Position Calculations
+- Cube/Box center is at its geometric center. A 20mm tall box at Y=10 spans from Y=0 to Y=20
+- Cylinder center is at mid-height. A 30mm tall cylinder at Y=15 spans from Y=0 to Y=30
+- Sphere center is at its center. A 10mm radius sphere at Y=10 spans from Y=0 to Y=20
+- Cone base is at Y - height/2, tip is at Y + height/2
 
-Be as detailed as possible in identifying geometric primitives. For complex shapes, break them down into simpler components (cubes, cylinders, spheres, cones, pyramids, etc.).`
+### Rotation Reference (in degrees)
+- Cylinder/Cone pointing UP (default): rotation [0, 0, 0]
+- Cylinder/Cone pointing FORWARD (+Z): rotation [90, 0, 0]
+- Cylinder/Cone pointing RIGHT (+X): rotation [0, 0, -90]
+- Cylinder/Cone pointing LEFT (-X): rotation [0, 0, 90]
+- Cylinder/Cone pointing BACKWARD (-Z): rotation [-90, 0, 0]
+
+### Surface Contact
+When placing a shape ON TOP of another:
+- New shape Y = base_shape_Y + (base_height/2) + (new_height/2)
+
+Example: Sphere (radius 10) on top of cube (height 20, at Y=10):
+- Cube top surface is at Y = 10 + 10 = 20
+- Sphere center should be at Y = 20 + 10 = 30
+
+## REQUIRED OUTPUT FORMAT
+You MUST respond with ONLY a valid JSON object:
+
+{
+  "description": "Brief description of what you see",
+  "shapes": [
+    {
+      "primitive": "cube",
+      "width": 50,
+      "height": 20,
+      "depth": 50,
+      "position": [0, 10, 0],
+      "rotation": [0, 0, 0],
+      "color": "#3342d2"
+    },
+    {
+      "primitive": "sphere",
+      "radius": 15,
+      "position": [0, 35, 0],
+      "rotation": [0, 0, 0],
+      "color": "#ef4444"
+    }
+  ],
+  "total_shapes": 2,
+  "confidence": "high"
+}
+
+## CRITICAL RULES
+1. Output ONLY the JSON object - no markdown, no code blocks, no extra text
+2. CALCULATE positions mathematically to prevent overlaps
+3. First shape typically starts at Y = height/2 (so bottom touches Y=0)
+4. Each subsequent stacked shape: Y = previous_top + current_height/2
+5. Rotate shapes to match their orientation in the image
+6. Use hex color codes matching the image colors
+7. Scale everything proportionally (assume ~100mm total height if unknown)`
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,7 +139,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Call xAI Vision API
+    console.log('Analyzing image with xAI Vision API...')
+
+    // Call xAI Vision API with latest model
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -85,7 +149,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-2-vision-1212',
+        model: 'grok-2-vision-latest',
         messages: [
           {
             role: 'user',
@@ -99,7 +163,7 @@ export async function POST(request: NextRequest) {
           }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 3000
       })
     })
 
@@ -115,20 +179,48 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
     const analysisText = data.choices[0].message.content.trim()
 
-    // Parse the analysis
-    const analysisMatch = analysisText.match(/<analysis>([\s\S]*?)<\/analysis>/)
-    const componentsMatch = analysisText.match(/<components>([\s\S]*?)<\/components>/)
-    const suggestionMatch = analysisText.match(/<cad_suggestion>([\s\S]*?)<\/cad_suggestion>/)
+    console.log('Vision API raw response:', analysisText)
 
-    const analysis = analysisMatch ? analysisMatch[1].trim() : ''
-    const components = componentsMatch ? componentsMatch[1].trim() : ''
-    const cadSuggestion = suggestionMatch ? suggestionMatch[1].trim() : ''
+    // Parse the JSON response
+    let parsedResult
+    try {
+      // Try to extract JSON from potential markdown code blocks
+      const jsonMatch = analysisText.match(/```json\s*([\s\S]*?)\s*```/) ||
+                        analysisText.match(/```\s*([\s\S]*?)\s*```/)
+
+      const jsonStr = jsonMatch ? jsonMatch[1].trim() : analysisText
+      parsedResult = JSON.parse(jsonStr)
+    } catch (parseError) {
+      console.error('Failed to parse vision response as JSON:', parseError)
+      // Return error with raw response for debugging
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to parse image analysis',
+        rawResponse: analysisText,
+        usage: data.usage
+      })
+    }
+
+    // Convert shapes to CAD patches format
+    const patches = (parsedResult.shapes || []).map((shape: any, index: number) => ({
+      feature_id: `feat_${String(index + 1).padStart(3, '0')}`,
+      action: 'INSERT',
+      content: {
+        primitive: shape.primitive,
+        ...shape,
+        position: shape.position || [0, 0, 0],
+        rotation: shape.rotation || [0, 0, 0],
+        color: shape.color || '#3342d2'
+      }
+    }))
 
     return NextResponse.json({
       success: true,
-      analysis,
-      components,
-      cadSuggestion,
+      description: parsedResult.description || 'Image analyzed',
+      shapes: parsedResult.shapes || [],
+      patches: patches,
+      totalShapes: parsedResult.total_shapes || patches.length,
+      confidence: parsedResult.confidence || 'medium',
       rawResponse: analysisText,
       usage: data.usage
     })

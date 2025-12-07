@@ -1,14 +1,16 @@
 Next --> cont.
 
-1. i want to use RAG (retireval augmented generation) as wlel as xAi's long context models to pull common designs the user uses 
-in their projects. please incoporate these features, but keep it subtle. i know i need to input manual info to make this happen. 
-pleaes let me know what info i have to put.
+1. please center off-center butotns throughout the program. 
 
-2. please allow users to use common onshape tools such as extrude, fillet, cutout, and other features using nlp. allow them to click on 
-structures (features) to revela their dimensions and change their size as well. 
+2. on the projects page, please add a button to add a project
 
-3. ensure user messages are shown in the chat as well. 
-
-4. ensure all buttons are functional throughout the program, especially those in the navigation bar (tools) in the cad ai studio. 
-
-5. ensure sidebar dimensions and animations are consistent throuhgout the program. 
+3. create functional, sleek features to do these tasks Extrude — Push a 2D sketch into 3D (add or cut material)
+Fillet — Round off edges
+Chamfer — Bevel edges at an angle
+Revolve — Spin a sketch around an axis to create rotational shapes
+Shell — Hollow out a solid, leaving walls of specified thickness
+Hole — Create precise holes (simple, counterbore, countersink, threaded)
+Pattern — Duplicate features in linear or circular arrays
+Mirror — Reflect geometry across a plane
+Loft — Blend between two or more profile sketches
+Sweep — Extrude a profile along a path/curve

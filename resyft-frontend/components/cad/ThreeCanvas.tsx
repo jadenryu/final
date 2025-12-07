@@ -1,14 +1,145 @@
 "use client"
 
-import { useRef, useEffect, useMemo } from "react"
-import { Canvas, useThree } from "@react-three/fiber"
-import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line } from "@react-three/drei"
+import { useRef, useEffect, useMemo, useState, useCallback } from "react"
+import { Canvas, useThree, ThreeEvent } from "@react-three/fiber"
+import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line, Html, RoundedBox } from "@react-three/drei"
 import * as THREE from "three"
 import type { Feature } from "../../lib/cad/store"
 import type { StudioFeature } from "../../lib/cad/studio-store"
 
 // Union type to accept both Feature and StudioFeature
 type AnyFeature = Feature | StudioFeature
+
+// Face/Edge selection info
+export interface SelectionInfo {
+  featureId: string
+  featureName: string
+  featureType: string
+  selectionType: 'face' | 'edge' | 'feature'
+  faceIndex?: number
+  faceName?: string
+  edgeIndex?: number
+  edgeName?: string
+  position: [number, number, number]
+  normal?: [number, number, number]
+  edgeVertices?: [[number, number, number], [number, number, number]]
+}
+
+// Edge definition for a box
+export interface BoxEdge {
+  index: number
+  name: string
+  start: [number, number, number]
+  end: [number, number, number]
+  type: 'vertical' | 'horizontal-top' | 'horizontal-bottom'
+}
+
+// Get all 12 edges of a box
+function getBoxEdges(width: number, height: number, depth: number): BoxEdge[] {
+  const hw = width / 2
+  const hh = height / 2
+  const hd = depth / 2
+
+  return [
+    // Vertical edges (4)
+    { index: 0, name: 'Front-Right Edge', start: [hw, -hh, hd], end: [hw, hh, hd], type: 'vertical' },
+    { index: 1, name: 'Front-Left Edge', start: [-hw, -hh, hd], end: [-hw, hh, hd], type: 'vertical' },
+    { index: 2, name: 'Back-Right Edge', start: [hw, -hh, -hd], end: [hw, hh, -hd], type: 'vertical' },
+    { index: 3, name: 'Back-Left Edge', start: [-hw, -hh, -hd], end: [-hw, hh, -hd], type: 'vertical' },
+    // Top horizontal edges (4)
+    { index: 4, name: 'Top-Front Edge', start: [-hw, hh, hd], end: [hw, hh, hd], type: 'horizontal-top' },
+    { index: 5, name: 'Top-Back Edge', start: [-hw, hh, -hd], end: [hw, hh, -hd], type: 'horizontal-top' },
+    { index: 6, name: 'Top-Right Edge', start: [hw, hh, -hd], end: [hw, hh, hd], type: 'horizontal-top' },
+    { index: 7, name: 'Top-Left Edge', start: [-hw, hh, -hd], end: [-hw, hh, hd], type: 'horizontal-top' },
+    // Bottom horizontal edges (4)
+    { index: 8, name: 'Bottom-Front Edge', start: [-hw, -hh, hd], end: [hw, -hh, hd], type: 'horizontal-bottom' },
+    { index: 9, name: 'Bottom-Back Edge', start: [-hw, -hh, -hd], end: [hw, -hh, -hd], type: 'horizontal-bottom' },
+    { index: 10, name: 'Bottom-Right Edge', start: [hw, -hh, -hd], end: [hw, -hh, hd], type: 'horizontal-bottom' },
+    { index: 11, name: 'Bottom-Left Edge', start: [-hw, -hh, -hd], end: [-hw, -hh, hd], type: 'horizontal-bottom' },
+  ]
+}
+
+// Find closest edge to a point on a box
+function findClosestBoxEdge(
+  point: THREE.Vector3,
+  width: number,
+  height: number,
+  depth: number,
+  position: [number, number, number],
+  rotation: [number, number, number]
+): BoxEdge | null {
+  const edges = getBoxEdges(width, height, depth)
+
+  // Convert point to local space
+  const localPoint = point.clone()
+  localPoint.sub(new THREE.Vector3(...position))
+
+  // Apply inverse rotation
+  const euler = new THREE.Euler(
+    -rotation[0] * Math.PI / 180,
+    -rotation[1] * Math.PI / 180,
+    -rotation[2] * Math.PI / 180
+  )
+  localPoint.applyEuler(euler)
+
+  let closestEdge: BoxEdge | null = null
+  let minDistance = Infinity
+
+  for (const edge of edges) {
+    const start = new THREE.Vector3(...edge.start)
+    const end = new THREE.Vector3(...edge.end)
+    const edgeVec = end.clone().sub(start)
+    const pointVec = localPoint.clone().sub(start)
+
+    // Project point onto edge line
+    const t = Math.max(0, Math.min(1, pointVec.dot(edgeVec) / edgeVec.lengthSq()))
+    const closestPoint = start.clone().add(edgeVec.multiplyScalar(t))
+    const distance = localPoint.distanceTo(closestPoint)
+
+    if (distance < minDistance) {
+      minDistance = distance
+      closestEdge = edge
+    }
+  }
+
+  // Only return if close enough to an edge (within ~5 units)
+  return minDistance < 5 ? closestEdge : null
+}
+
+// Get face name from index for box geometry
+function getBoxFaceName(faceIndex: number): string {
+  const faceNames = ['Right (+X)', 'Left (-X)', 'Top (+Y)', 'Bottom (-Y)', 'Front (+Z)', 'Back (-Z)']
+  const faceGroupIndex = Math.floor(faceIndex / 2)
+  return faceNames[faceGroupIndex] || `Face ${faceIndex}`
+}
+
+// Get face name for cylinder/prism
+function getCylinderFaceName(faceIndex: number, sides: number): string {
+  if (faceIndex < sides * 2) {
+    // Side faces
+    const sideIndex = Math.floor(faceIndex / 2)
+    return `Side ${sideIndex + 1}`
+  } else if (faceIndex < sides * 2 + sides) {
+    return 'Top'
+  } else {
+    return 'Bottom'
+  }
+}
+
+// Get face normal from geometry and face index
+function getFaceNormal(geometry: THREE.BufferGeometry, faceIndex: number): THREE.Vector3 {
+  const normal = new THREE.Vector3()
+  const normalAttribute = geometry.getAttribute('normal')
+  if (normalAttribute) {
+    const idx = faceIndex * 3
+    normal.set(
+      normalAttribute.getX(idx),
+      normalAttribute.getY(idx),
+      normalAttribute.getZ(idx)
+    )
+  }
+  return normal.normalize()
+}
 
 // Helper to get content from either feature type
 function getFeatureContent(feature: AnyFeature): any {
@@ -64,8 +195,32 @@ function getSketchGeometry(sketchId: string, features: AnyFeature[]): { points: 
 }
 
 // Individual shape component that respects visibility
-function Shape({ feature, isSelected, allFeatures }: { feature: AnyFeature; isSelected: boolean; allFeatures: AnyFeature[] }) {
+function Shape({
+  feature,
+  isSelected,
+  allFeatures,
+  onSelect,
+  onDoubleClick,
+  onFaceSelect,
+  onEdgeSelect,
+  selectedFaceIndex,
+  selectedEdgeIndex,
+  onRightClick
+}: {
+  feature: AnyFeature
+  isSelected: boolean
+  allFeatures: AnyFeature[]
+  onSelect?: (id: string) => void
+  onDoubleClick?: (id: string) => void
+  onFaceSelect?: (info: SelectionInfo) => void
+  onEdgeSelect?: (info: SelectionInfo) => void
+  selectedFaceIndex?: number
+  selectedEdgeIndex?: number
+  onRightClick?: (info: SelectionInfo, event: ThreeEvent<MouseEvent>) => void
+}) {
   const meshRef = useRef<THREE.Mesh>(null)
+  const [hoveredFaceIndex, setHoveredFaceIndex] = useState<number | null>(null)
+  const [hoveredEdge, setHoveredEdge] = useState<BoxEdge | null>(null)
   const content = getFeatureContent(feature)
 
   // Extract primitive values to use as dependencies
@@ -83,7 +238,12 @@ function Shape({ feature, isSelected, allFeatures }: { feature: AnyFeature; isSe
   const rotZ = ((content?.rotation?.[2] || 0) * Math.PI) / 180
   const contentColor = content?.color || "#3342d2"
 
-  // Fillet/chamfer specific values
+  // Fillet/chamfer specific values - for the shape itself
+  const shapeFilletRadius = content?.fillet_radius || 0
+  const shapeChamferDistance = content?.chamfer_distance || 0
+  const edgeFillets = content?.edge_fillets || [] // Per-edge fillet data
+
+  // For fillet/chamfer feature types
   const filletRadius = content?.fillet_radius || content?.radius || 2
   const chamferDistance = content?.chamfer_distance || content?.distance || 2
   const parentId = content?.parent_id
@@ -110,10 +270,19 @@ function Shape({ feature, isSelected, allFeatures }: { feature: AnyFeature; isSe
   const emissive = isSelected ? "#f59e0b" : "#000000"
   const emissiveIntensity = isSelected ? 0.3 : 0
 
+  // Check if this is a cube/box with uniform fillet (all edges) - use RoundedBox
+  // If we have per-edge fillets, render them separately instead
+  const hasPerEdgeFillets = edgeFillets.length > 0
+  const isFilletedBox = (type === 'cube' || type === 'box') && shapeFilletRadius > 0 && !hasPerEdgeFillets
+
   const geometry = useMemo(() => {
     switch (type) {
       case 'cube':
       case 'box':
+        // Filleted boxes use RoundedBox component, so return null here
+        if (shapeFilletRadius > 0) {
+          return new THREE.BufferGeometry() // Placeholder, actual render uses RoundedBox
+        }
         return new THREE.BoxGeometry(width, height, depth)
       case 'cylinder':
         return new THREE.CylinderGeometry(radius, radius, height, 32)
@@ -136,6 +305,12 @@ function Shape({ feature, isSelected, allFeatures }: { feature: AnyFeature; isSe
       case 'octagonal_prism':
       case 'octagon':
         return new THREE.CylinderGeometry(radius, radius, height, 8)
+      case 'pentagonal_prism':
+      case 'pentagon':
+        return new THREE.CylinderGeometry(radius, radius, height, 5)
+      case 'custom_prism':
+        // For any N-sided prism, use the 'sides' parameter
+        return new THREE.CylinderGeometry(radius, radius, height, sides)
       case 'capsule':
         return new THREE.CapsuleGeometry(radius, height, 16, 32)
       case 'ring':
@@ -226,19 +401,11 @@ function Shape({ feature, isSelected, allFeatures }: { feature: AnyFeature; isSe
         return new THREE.CylinderGeometry(radius, radius, height, revolveSegments)
       }
 
-      case 'fillet': {
-        // Fillet visualization: show rounded edges as a torus segment at edge locations
-        // In a real CAD system, this would modify the parent geometry
-        // For visualization, we show a small torus to indicate filleted edge
-        return new THREE.TorusGeometry(filletRadius, filletRadius * 0.3, 8, 32)
-      }
-
-      case 'chamfer': {
-        // Chamfer visualization: show as a small beveled box
-        // In a real CAD system, this would cut the edge at 45 degrees
-        const chamferSize = chamferDistance
-        return new THREE.BoxGeometry(chamferSize, chamferSize, chamferSize)
-      }
+      case 'fillet':
+      case 'chamfer':
+        // Fillet/chamfer are now applied directly to the parent shape
+        // These cases are kept for backwards compatibility but shouldn't be created
+        return new THREE.BufferGeometry()
 
       case 'sketch': {
         // Sketches are 2D and rendered differently - return null geometry
@@ -304,21 +471,382 @@ function Shape({ feature, isSelected, allFeatures }: { feature: AnyFeature; isSe
     return null
   }
 
+  // Get number of sides for prism types
+  const getSides = () => {
+    switch (type) {
+      case 'prism':
+      case 'triangular_prism':
+        return 3
+      case 'pyramid':
+        return 4
+      case 'pentagonal_prism':
+      case 'pentagon':
+        return 5
+      case 'hexagonal_prism':
+      case 'hexagon':
+        return 6
+      case 'octagonal_prism':
+      case 'octagon':
+        return 8
+      case 'custom_prism':
+        return sides
+      case 'cylinder':
+        return 32
+      default:
+        return 0
+    }
+  }
+
+  // Get face name based on geometry type and face index
+  const getFaceName = (faceIdx: number): string => {
+    switch (type) {
+      case 'cube':
+      case 'box':
+        return getBoxFaceName(faceIdx)
+      case 'prism':
+      case 'triangular_prism':
+      case 'pyramid':
+      case 'pentagonal_prism':
+      case 'pentagon':
+      case 'hexagonal_prism':
+      case 'hexagon':
+      case 'octagonal_prism':
+      case 'octagon':
+      case 'custom_prism':
+      case 'cylinder':
+        return getCylinderFaceName(faceIdx, getSides())
+      case 'sphere':
+        return `Surface (${faceIdx})`
+      case 'cone':
+        return faceIdx < 32 ? 'Side' : 'Base'
+      default:
+        return `Face ${faceIdx}`
+    }
+  }
+
+  // Create selection info for faces
+  const createFaceSelectionInfo = (faceIdx: number, point: THREE.Vector3): SelectionInfo => {
+    const normal = getFaceNormal(geometry, faceIdx)
+    return {
+      featureId: feature.id,
+      featureName: type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' '),
+      featureType: type,
+      selectionType: 'face',
+      faceIndex: faceIdx,
+      faceName: getFaceName(faceIdx),
+      position: [point.x, point.y, point.z],
+      normal: [normal.x, normal.y, normal.z]
+    }
+  }
+
+  // Create selection info for edges
+  const createEdgeSelectionInfo = (edge: BoxEdge, point: THREE.Vector3): SelectionInfo => {
+    // Transform edge vertices to world space
+    const rotation = content?.rotation || [0, 0, 0]
+    const position = content?.position || [0, 0, 0]
+    const euler = new THREE.Euler(
+      rotation[0] * Math.PI / 180,
+      rotation[1] * Math.PI / 180,
+      rotation[2] * Math.PI / 180
+    )
+
+    const startWorld = new THREE.Vector3(...edge.start).applyEuler(euler).add(new THREE.Vector3(...position))
+    const endWorld = new THREE.Vector3(...edge.end).applyEuler(euler).add(new THREE.Vector3(...position))
+
+    return {
+      featureId: feature.id,
+      featureName: type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' '),
+      featureType: type,
+      selectionType: 'edge',
+      edgeIndex: edge.index,
+      edgeName: edge.name,
+      position: [point.x, point.y, point.z],
+      edgeVertices: [
+        [startWorld.x, startWorld.y, startWorld.z],
+        [endWorld.x, endWorld.y, endWorld.z]
+      ]
+    }
+  }
+
+  // Check if this is a box/cube type that supports edge selection
+  const supportsEdgeSelection = type === 'cube' || type === 'box' || type === 'wedge'
+
+  // Handle click with face/edge detection
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation()
+
+    // Get face index from intersection
+    const faceIndex = e.faceIndex ?? 0
+
+    // Check for edge selection on Ctrl+click for boxes
+    if (e.ctrlKey && supportsEdgeSelection && onEdgeSelect) {
+      const rotation = content?.rotation || [0, 0, 0]
+      const position = content?.position || [0, 0, 0]
+      const closestEdge = findClosestBoxEdge(e.point, width, height, depth, position, rotation)
+      if (closestEdge) {
+        const info = createEdgeSelectionInfo(closestEdge, e.point)
+        onEdgeSelect(info)
+        return
+      }
+    }
+
+    if (e.shiftKey && onFaceSelect) {
+      // Shift+click for face selection
+      const info = createFaceSelectionInfo(faceIndex, e.point)
+      onFaceSelect(info)
+    }
+    // Single click does nothing for feature selection - use double-click
+  }
+
+  // Handle double-click for whole feature selection
+  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation()
+    if (onDoubleClick) {
+      onDoubleClick(feature.id)
+    }
+  }
+
+  // Handle right click for context menu
+  const handleContextMenu = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation()
+
+    const faceIndex = e.faceIndex ?? 0
+
+    // Check for edge selection on right-click near edges for boxes
+    if (supportsEdgeSelection) {
+      const rotation = content?.rotation || [0, 0, 0]
+      const position = content?.position || [0, 0, 0]
+      const closestEdge = findClosestBoxEdge(e.point, width, height, depth, position, rotation)
+      if (closestEdge) {
+        const info = createEdgeSelectionInfo(closestEdge, e.point)
+        if (onRightClick) {
+          onRightClick(info, e)
+        }
+        return
+      }
+    }
+
+    const info = createFaceSelectionInfo(faceIndex, e.point)
+
+    if (onRightClick) {
+      onRightClick(info, e)
+    }
+  }
+
+  // Handle hover for face/edge highlighting
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation()
+    const faceIndex = e.faceIndex ?? 0
+    setHoveredFaceIndex(faceIndex)
+
+    // Check for edge hovering on boxes when Ctrl is held or when close to edge
+    if (supportsEdgeSelection) {
+      const rotation = content?.rotation || [0, 0, 0]
+      const position = content?.position || [0, 0, 0]
+      const closestEdge = findClosestBoxEdge(e.point, width, height, depth, position, rotation)
+      setHoveredEdge(closestEdge)
+      if (closestEdge) {
+        document.body.style.cursor = 'crosshair'
+        return
+      }
+    }
+
+    document.body.style.cursor = 'pointer'
+  }
+
+  // Determine if this face is highlighted
+  const isFaceHighlighted = (faceIdx: number) => {
+    return selectedFaceIndex === faceIdx || hoveredFaceIndex === faceIdx
+  }
+
   return (
-    <mesh
-      ref={meshRef}
-      position={[posX, posY, posZ]}
-      rotation={[rotX, rotY, rotZ]}
-      geometry={geometry}
-    >
-      <meshStandardMaterial
-        color={color}
-        emissive={emissive}
-        emissiveIntensity={emissiveIntensity}
-        roughness={0.4}
-        metalness={0.1}
-      />
-    </mesh>
+    <group>
+      {/* Render filleted box using RoundedBox from drei */}
+      {isFilletedBox ? (
+        <RoundedBox
+          ref={meshRef as any}
+          args={[width, height, depth]}
+          radius={shapeFilletRadius}
+          smoothness={4}
+          position={[posX, posY, posZ]}
+          rotation={[rotX, rotY, rotZ]}
+          onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
+          onContextMenu={handleContextMenu}
+          onPointerMove={handlePointerMove}
+          onPointerOut={() => {
+            setHoveredFaceIndex(null)
+            setHoveredEdge(null)
+            document.body.style.cursor = 'default'
+          }}
+        >
+          <meshStandardMaterial
+            color={color}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+            roughness={0.4}
+            metalness={0.1}
+          />
+        </RoundedBox>
+      ) : (
+        <mesh
+          ref={meshRef}
+          position={[posX, posY, posZ]}
+          rotation={[rotX, rotY, rotZ]}
+          geometry={geometry}
+          onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
+          onContextMenu={handleContextMenu}
+          onPointerMove={handlePointerMove}
+          onPointerOut={() => {
+            setHoveredFaceIndex(null)
+            setHoveredEdge(null)
+            document.body.style.cursor = 'default'
+          }}
+        >
+          <meshStandardMaterial
+            color={color}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+            roughness={0.4}
+            metalness={0.1}
+          />
+        </mesh>
+      )}
+
+      {/* Face highlight overlay when hovering */}
+      {isSelected && hoveredFaceIndex !== null && !isFilletedBox && (
+        <mesh
+          position={[posX, posY, posZ]}
+          rotation={[rotX, rotY, rotZ]}
+          geometry={geometry}
+        >
+          <meshBasicMaterial
+            color="#22c55e"
+            opacity={0.2}
+            transparent
+            depthTest={false}
+            wireframe={false}
+          />
+        </mesh>
+      )}
+
+      {/* Render per-edge fillets as cylinders along the edges */}
+      {edgeFillets.length > 0 && (type === 'cube' || type === 'box') && (
+        <group position={[posX, posY, posZ]} rotation={[rotX, rotY, rotZ]}>
+          {edgeFillets.map((fillet: { edgeIndex: number; radius: number; edgeName: string }) => {
+            const edges = getBoxEdges(width, height, depth)
+            const edge = edges.find(e => e.index === fillet.edgeIndex)
+            if (!edge) return null
+
+            // Calculate edge midpoint and length
+            const midX = (edge.start[0] + edge.end[0]) / 2
+            const midY = (edge.start[1] + edge.end[1]) / 2
+            const midZ = (edge.start[2] + edge.end[2]) / 2
+            const dx = edge.end[0] - edge.start[0]
+            const dy = edge.end[1] - edge.start[1]
+            const dz = edge.end[2] - edge.start[2]
+            const edgeLength = Math.sqrt(dx * dx + dy * dy + dz * dz)
+
+            // Calculate rotation to align cylinder with edge
+            let cylRotation: [number, number, number] = [0, 0, 0]
+            if (edge.type === 'vertical') {
+              cylRotation = [0, 0, 0] // Cylinder default is vertical
+            } else if (Math.abs(dx) > Math.abs(dz)) {
+              cylRotation = [0, 0, Math.PI / 2] // Horizontal along X
+            } else {
+              cylRotation = [Math.PI / 2, 0, 0] // Horizontal along Z
+            }
+
+            return (
+              <mesh
+                key={`fillet-${fillet.edgeIndex}`}
+                position={[midX, midY, midZ]}
+                rotation={cylRotation}
+              >
+                <cylinderGeometry args={[fillet.radius, fillet.radius, edgeLength, 16]} />
+                <meshStandardMaterial
+                  color={contentColor}
+                  roughness={0.4}
+                  metalness={0.1}
+                />
+              </mesh>
+            )
+          })}
+        </group>
+      )}
+
+      {/* Show edge highlight line when hovering near an edge */}
+      {hoveredEdge && supportsEdgeSelection && (
+        <group>
+          {/* Edge highlight line */}
+          <Line
+            points={[
+              new THREE.Vector3(...hoveredEdge.start)
+                .applyEuler(new THREE.Euler(rotX, rotY, rotZ))
+                .add(new THREE.Vector3(posX, posY, posZ))
+                .toArray() as [number, number, number],
+              new THREE.Vector3(...hoveredEdge.end)
+                .applyEuler(new THREE.Euler(rotX, rotY, rotZ))
+                .add(new THREE.Vector3(posX, posY, posZ))
+                .toArray() as [number, number, number]
+            ]}
+            color="#f59e0b"
+            lineWidth={4}
+          />
+        </group>
+      )}
+
+      {/* Show selected edge highlight */}
+      {selectedEdgeIndex !== undefined && supportsEdgeSelection && (
+        <group>
+          {(() => {
+            const edges = getBoxEdges(width, height, depth)
+            const selectedEdge = edges.find(e => e.index === selectedEdgeIndex)
+            if (!selectedEdge) return null
+            return (
+              <Line
+                points={[
+                  new THREE.Vector3(...selectedEdge.start)
+                    .applyEuler(new THREE.Euler(rotX, rotY, rotZ))
+                    .add(new THREE.Vector3(posX, posY, posZ))
+                    .toArray() as [number, number, number],
+                  new THREE.Vector3(...selectedEdge.end)
+                    .applyEuler(new THREE.Euler(rotX, rotY, rotZ))
+                    .add(new THREE.Vector3(posX, posY, posZ))
+                    .toArray() as [number, number, number]
+                ]}
+                color="#22c55e"
+                lineWidth={6}
+              />
+            )
+          })()}
+        </group>
+      )}
+
+      {/* Show face/edge indicator on hover when feature is selected */}
+      {isSelected && (hoveredFaceIndex !== null || hoveredEdge) && meshRef.current && (
+        <Html
+          position={[posX, posY + height / 2 + 10, posZ]}
+          center
+          style={{ pointerEvents: 'none' }}
+        >
+          <div className="bg-slate-900/90 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+            {hoveredEdge ? (
+              <>
+                <span className="font-medium text-amber-400">{hoveredEdge.name}</span>
+                <span className="text-slate-400 ml-1">(Ctrl+Click to select, Right-click for fillet)</span>
+              </>
+            ) : (
+              <>
+                <span className="font-medium">{getFaceName(hoveredFaceIndex!)}</span>
+                <span className="text-slate-400 ml-1">(Shift+Click to select, Right-click for actions)</span>
+              </>
+            )}
+          </div>
+        </Html>
+      )}
+    </group>
   )
 }
 
@@ -354,6 +882,7 @@ function ShapeEdges({ feature, allFeatures }: { feature: AnyFeature; allFeatures
   const radiusBottom = content?.radiusBottom ?? radius
   const innerRadius = content?.innerRadius || (radius * 0.5)
   const outerRadius = content?.outerRadius || radius
+  const sides = content?.sides || 6
 
   const geometry = useMemo(() => {
     switch (type) {
@@ -381,6 +910,12 @@ function ShapeEdges({ feature, allFeatures }: { feature: AnyFeature; allFeatures
       case 'octagonal_prism':
       case 'octagon':
         return new THREE.CylinderGeometry(radius, radius, height, 8)
+      case 'pentagonal_prism':
+      case 'pentagon':
+        return new THREE.CylinderGeometry(radius, radius, height, 5)
+      case 'custom_prism':
+        // For any N-sided prism, use the 'sides' parameter
+        return new THREE.CylinderGeometry(radius, radius, height, sides)
       case 'capsule':
         return new THREE.CapsuleGeometry(radius, height, 16, 32)
       case 'ring':
@@ -464,19 +999,15 @@ function ShapeEdges({ feature, allFeatures }: { feature: AnyFeature; allFeatures
       }
 
       case 'fillet':
-        return new THREE.TorusGeometry(filletRadius, filletRadius * 0.3, 8, 32)
-
       case 'chamfer':
-        return new THREE.BoxGeometry(chamferDistance, chamferDistance, chamferDistance)
-
       case 'sketch':
-        // Sketches don't have edge geometry - they're rendered as lines
+        // These don't have visible edge geometry
         return null
 
       default:
         return new THREE.BoxGeometry(10, 10, 10)
     }
-  }, [type, width, height, depth, radius, radiusTop, radiusBottom, tube, innerRadius, outerRadius, sketchId, extrudeDepth, bevel, revolveAngle, revolveSegments, filletRadius, chamferDistance, allFeatures])
+  }, [type, width, height, depth, radius, radiusTop, radiusBottom, tube, innerRadius, outerRadius, sides, sketchId, extrudeDepth, bevel, revolveAngle, revolveSegments, filletRadius, chamferDistance, allFeatures])
 
   const edges = useMemo(() => geometry ? new THREE.EdgesGeometry(geometry) : null, [geometry])
 
@@ -594,6 +1125,12 @@ interface ThreeCanvasProps {
   showAxes?: boolean
   gridSize?: number
   onSelectFeature?: (id: string) => void
+  onDoubleClickFeature?: (id: string) => void
+  onFaceSelect?: (info: SelectionInfo) => void
+  onEdgeSelect?: (info: SelectionInfo) => void
+  onContextMenu?: (info: SelectionInfo, screenPosition: { x: number, y: number }) => void
+  selectedFaceInfo?: SelectionInfo | null
+  selectedEdgeInfo?: SelectionInfo | null
 }
 
 export default function ThreeCanvas({
@@ -604,14 +1141,32 @@ export default function ThreeCanvas({
   showGrid = true,
   showAxes = true,
   gridSize = 10,
+  onSelectFeature,
+  onDoubleClickFeature,
+  onFaceSelect,
+  onEdgeSelect,
+  onContextMenu,
+  selectedFaceInfo,
+  selectedEdgeInfo,
 }: ThreeCanvasProps) {
   // Support both selectedFeatureId (single) and selectedFeatureIds (array)
   const activeSelectedIds = selectedFeatureId ? [selectedFeatureId] : selectedFeatureIds
+
+  // Handle right click on shapes
+  const handleRightClick = useCallback((info: SelectionInfo, event: ThreeEvent<MouseEvent>) => {
+    if (onContextMenu) {
+      // Get screen position from the native event
+      const screenPos = { x: event.nativeEvent.clientX, y: event.nativeEvent.clientY }
+      onContextMenu(info, screenPos)
+    }
+  }, [onContextMenu])
+
   return (
     <Canvas
       camera={{ position: [50, 50, 50], fov: 50 }}
       style={{ background: '#ffffff' }}
       gl={{ antialias: true }}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {/* Lighting */}
       <ambientLight intensity={0.6} />
@@ -649,6 +1204,13 @@ export default function ThreeCanvas({
             feature={feature}
             isSelected={activeSelectedIds.includes(feature.id)}
             allFeatures={features}
+            onSelect={onSelectFeature}
+            onDoubleClick={onDoubleClickFeature}
+            onFaceSelect={onFaceSelect}
+            onEdgeSelect={onEdgeSelect}
+            onRightClick={handleRightClick}
+            selectedFaceIndex={selectedFaceInfo?.featureId === feature.id ? selectedFaceInfo.faceIndex : undefined}
+            selectedEdgeIndex={selectedEdgeInfo?.featureId === feature.id ? selectedEdgeInfo.edgeIndex : undefined}
           />
           <ShapeEdges feature={feature} allFeatures={features} />
         </group>

@@ -63,6 +63,38 @@ All primitives support an optional "color" field (hex color like "#ff0000" for r
 18. star: {"primitive": "star", "radius": <mm>, "depth": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
 19. ring: {"primitive": "ring", "outerRadius": <mm>, "innerRadius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
 20. pipe: {"primitive": "pipe", "radius": <mm>, "tube": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+21. pentagonal_prism: {"primitive": "pentagonal_prism", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+22. custom_prism: {"primitive": "custom_prism", "sides": <number_of_sides>, "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+
+## CAD Operations (NLP Commands)
+Users may request common CAD operations using natural language. Interpret and execute these:
+
+### Extrude
+When user says "extrude", "pull", or "extend", increase one dimension of an existing shape or create an extruded profile.
+- "Extrude the cube by 20mm" → Use REPLACE to update the shape with increased height/depth
+- Create the resulting shape with the new dimensions
+
+### Fillet/Round/Chamfer
+When user says "fillet", "round", "chamfer", or "bevel", acknowledge the request and explain that edge operations will be approximated:
+- For visual approximation, you can add small rounded shapes at corners
+- Explain: "I've added rounded elements to approximate the fillet effect"
+
+### Cutout/Boolean Subtract
+When user says "cut", "hole", "subtract", "remove from", create a shape that visually represents the cut:
+- For holes in cylinders/boxes, add a dark-colored cylinder/box where the hole should be
+- Use color "#1f2937" (dark) for cutout representations
+- Position the "hole" geometry at the correct location
+
+### Mirror/Pattern
+When user says "mirror", "duplicate symmetrically", or "create pattern":
+- Mirror: Create copy with negated position on specified axis
+- Linear pattern: Create multiple copies with regular spacing
+- Circular pattern: Create copies around a center point
+
+### Resize/Scale
+When user says "resize", "scale", "make bigger/smaller", "change dimensions":
+- Use REPLACE action to update the shape with new dimensions
+- Preserve position and rotation unless specified otherwise
 
 ## Common Colors (use hex codes)
 - Red: #ef4444, Orange: #f97316, Yellow: #eab308, Green: #22c55e
@@ -78,22 +110,41 @@ All primitives support an optional "color" field (hex color like "#ff0000" for r
 - Rotation is in degrees [rx, ry, rz] around each axis
 
 ## CRITICAL: Spatial Awareness & Positioning Rules
-When adding new shapes to an existing scene, you MUST:
 
-1. **Avoid Overlaps**: Calculate positions so new shapes don't overlap with existing ones. Consider the bounding box of each shape.
-2. **Relative Positioning**: When user says "add X to Y" or "put X on Y", position X relative to Y based on context:
-   - "on top of" = increase Y position by the height of the base shape
-   - "next to" = offset along X or Z axis by the combined radii/widths
-   - "in front of" = increase Z position
-   - "behind" = decrease Z position
-   - "to the left/right" = adjust X position
-3. **Proper Orientation**: Rotate shapes so they face the right direction:
-   - A nose should point OUTWARD from the face (typically along +Z axis)
-   - For a cone/carrot nose: rotation [90, 0, 0] makes it point forward along Z
-   - Arms should extend horizontally: rotation [0, 0, 90] for cylinders
-   - Eyes should face forward (usually no rotation needed for spheres)
-4. **Scale Appropriately**: Make parts proportional to the whole. A nose should be smaller than the head, eyes should be small relative to the face.
-5. **Surface Contact**: When placing something "on" a surface, position so the bottom of the new shape touches the top of the existing one.
+### Shape Center Points (IMPORTANT!)
+- All shapes are positioned by their CENTER, not their corner or base
+- Cube/Box: center is at geometric center. A 20mm tall box at Y=10 spans Y=0 to Y=20
+- Cylinder: center is at mid-height. A 30mm tall cylinder at Y=15 spans Y=0 to Y=30
+- Sphere: center is at its center. A radius=10 sphere at Y=10 spans Y=0 to Y=20
+- Cone: center is at mid-height. Base at Y-height/2, tip at Y+height/2
+
+### Calculating Positions to Avoid Overlaps
+1. **First shape on ground**: Y = height/2 (so bottom touches Y=0)
+2. **Stacking shapes vertically**: new_Y = previous_Y + (previous_height/2) + (new_height/2)
+3. **Shapes side by side**: offset X or Z by sum of half-widths/radii plus small gap
+
+### Example: Stacking a sphere on a cube
+- Cube: height=20, position Y=10 (bottom at Y=0, top at Y=20)
+- Sphere: radius=10 (diameter=20), needs to sit on top of cube
+- Sphere Y = cube_top + sphere_radius = 20 + 10 = 30
+- So sphere position: [0, 30, 0]
+
+### Relative Positioning Commands
+When user says "add X to Y" or "put X on Y":
+- "on top of" = new_Y = base_Y + (base_height/2) + (new_height/2 or radius)
+- "next to" = offset X or Z by combined half-widths/radii + gap
+- "in front of" = increase Z position by combined depths/radii
+- "behind" = decrease Z position
+- "to the left/right" = adjust X position
+
+### Proper Orientation
+Rotate shapes to face the correct direction:
+- Nose pointing OUTWARD from face: rotation [90, 0, 0] for cone along +Z
+- Arms extending horizontally: rotation [0, 0, 90] for cylinders
+- Eyes facing forward: usually [0, 0, 0] for spheres
+
+### Scale Appropriately
+Make parts proportional to the whole (nose smaller than head, eyes small relative to face).
 
 ## Rotation Reference for Common Cases
 - Cone/Cylinder pointing UP (default): [0, 0, 0]
@@ -114,24 +165,30 @@ When adding new shapes to an existing scene, you MUST:
 User: "Create a snowman"
 Response:
 <explanation>
-I've created a classic snowman with three stacked spheres! The bottom is largest (40mm), middle is medium (30mm), and the head is smallest (20mm). They're stacked vertically with each sphere sitting on top of the one below.
+I've created a classic snowman with three stacked spheres!
+- Bottom sphere: radius 40mm, center at Y=40 (bottom touches ground at Y=0)
+- Middle sphere: radius 30mm, center at Y=40+40+30=110 (sits on top of bottom)
+- Head sphere: radius 20mm, center at Y=110+30+20=160 (sits on top of middle)
 </explanation>
 
 <dsl>
-AT feat_001 INSERT {"primitive": "sphere", "radius": 40, "position": [0, 0, 0], "color": "#ffffff"}
-AT feat_002 INSERT {"primitive": "sphere", "radius": 30, "position": [0, 60, 0], "color": "#ffffff"}
-AT feat_003 INSERT {"primitive": "sphere", "radius": 20, "position": [0, 105, 0], "color": "#ffffff"}
+AT feat_001 INSERT {"primitive": "sphere", "radius": 40, "position": [0, 40, 0], "color": "#ffffff"}
+AT feat_002 INSERT {"primitive": "sphere", "radius": 30, "position": [0, 110, 0], "color": "#ffffff"}
+AT feat_003 INSERT {"primitive": "sphere", "radius": 20, "position": [0, 160, 0], "color": "#ffffff"}
 </dsl>
 
 User: "Add a carrot nose to the snowman"
-(Given scene has head sphere at position [0, 105, 0] with radius 20)
+(Given scene has head sphere at position [0, 160, 0] with radius 20)
 Response:
 <explanation>
-I've added an orange carrot nose! It's a cone pointing forward from the snowman's face, positioned at the center of the head and extending outward.
+I've added an orange carrot nose! The cone points forward (+Z direction) from the snowman's face.
+- Cone height: 25mm, radius: 4mm
+- Position: X=0 (centered), Y=160 (same as head center), Z=20+12.5=32.5 (head radius + half cone length)
+- Rotation: [90, 0, 0] to point forward along Z axis
 </explanation>
 
 <dsl>
-AT feat_004 INSERT {"primitive": "cone", "radius": 4, "height": 25, "position": [0, 105, 22], "rotation": [90, 0, 0], "color": "#f97316"}
+AT feat_004 INSERT {"primitive": "cone", "radius": 4, "height": 25, "position": [0, 160, 32], "rotation": [90, 0, 0], "color": "#f97316"}
 </dsl>`
 
 export async function POST(request: NextRequest) {
@@ -221,7 +278,39 @@ The workspace is empty. You can place shapes at the origin [0, 0, 0] or wherever
 
     console.log('Sending to AI:', { message, historyLength: filteredHistory.length, hasPatterns: !!patternContext, hasImageContext: !!imageContext, sceneShapes: sceneContext.length })
 
-    // Call xAI API
+    // List of known primitive shapes the system can render natively
+    const knownPrimitives = [
+      'cube', 'box', 'cylinder', 'sphere', 'cone', 'torus',
+      'pyramid', 'prism', 'triangular_prism', 'hexagonal_prism', 'octagonal_prism',
+      'pentagonal_prism', 'custom_prism', 'capsule', 'ring', 'pipe', 'tube',
+      'dodecahedron', 'icosahedron', 'octahedron', 'tetrahedron',
+      'frustum', 'hemisphere', 'wedge', 'star',
+      // Common names/aliases
+      'hexagon', 'octagon', 'pentagon', 'triangle', 'circle', 'rectangle', 'square'
+    ]
+
+    // Check if the user's message mentions any shape-related terms not in our known list
+    // This helps determine if we should force web search for unknown geometry
+    const messageLower = message.toLowerCase()
+    const containsKnownPrimitive = knownPrimitives.some(p => messageLower.includes(p))
+
+    // Force web search if user is asking about shapes/geometry but we don't recognize the specific type
+    // or if they're asking questions that need real-world knowledge
+    const geometryTerms = ['prism', 'polygon', 'shape', 'geometry', 'solid', 'polyhedron', 'create', 'make', 'build', 'design']
+    const questionTerms = ['what is', 'how to', 'how do', 'can you', 'what does', 'explain', 'describe']
+    const realWorldTerms = ['realistic', 'real world', 'actual', 'accurate', 'proper', 'correct']
+
+    const isAskingAboutGeometry = geometryTerms.some(t => messageLower.includes(t))
+    const isAskingQuestion = questionTerms.some(t => messageLower.includes(t))
+    const wantsRealWorld = realWorldTerms.some(t => messageLower.includes(t))
+
+    // Force search ON if: asking about geometry but no known primitive, asking questions, or wants real-world accuracy
+    // Otherwise use AUTO mode so AI can decide when it needs to search
+    const forceWebSearch = (isAskingAboutGeometry && !containsKnownPrimitive) || isAskingQuestion || wantsRealWorld
+
+    // Call xAI API with Live Search enabled
+    // Mode "auto" lets the AI decide when to search (default for known shapes)
+    // Mode "on" forces search for unknown shapes or questions
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -232,7 +321,13 @@ The workspace is empty. You can place shapes at the origin [0, 0, 0] or wherever
         model: 'grok-3-fast',
         messages: messages,
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 2000,
+        // Enable Live Search - always available, AI decides when needed
+        search_parameters: {
+          mode: forceWebSearch ? 'on' : 'auto',
+          max_search_results: 15,
+          return_citations: true
+        }
       })
     })
 

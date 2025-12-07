@@ -249,12 +249,36 @@ export default function CADProjectsPage() {
           </Card>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Add New Project Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card
+                className="h-full border-2 border-dashed border-gray-300 hover:border-brand-400 hover:bg-brand-50/50 transition-all cursor-pointer group flex flex-col items-center justify-center min-h-[200px]"
+                onClick={() => setShowNewProjectDialog(true)}
+              >
+                <CardContent className="flex flex-col items-center justify-center py-8">
+                  <div className="w-14 h-14 rounded-full bg-brand-100 flex items-center justify-center mb-4 group-hover:bg-brand-200 transition-colors">
+                    <Plus className="w-7 h-7 text-brand-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 group-hover:text-brand-600 transition-colors">
+                    New Project
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Create a new CAD design
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
             {sortedProjects.map((project, index) => (
               <motion.div
                 key={project.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                transition={{ duration: 0.3, delay: (index + 1) * 0.05 }}
               >
                 <Card className="hover:shadow-lg transition-all hover:border-brand-200 group h-full">
                   <CardHeader className="pb-3">

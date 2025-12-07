@@ -1108,6 +1108,7 @@ export default function EditorPage() {
     setSelectedFeatures,
     setViewMode,
     addFeature,
+    updateFeature,
     deleteFeature,
     setIsGenerating,
     updateProject,
@@ -1825,8 +1826,24 @@ export default function EditorPage() {
               <button
                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2"
                 onClick={() => {
-                  // TODO: Add fillet operation
-                  console.log('Fillet selected', contextMenu.selectionInfo)
+                  const info = contextMenu.selectionInfo
+                  if (info) {
+                    const feature = project.features.find(f => f.id === info.featureId)
+                    if (feature) {
+                      const content = feature.patch?.content as any
+                      const currentFillet = content?.fillet_radius || 0
+                      // Add 2mm fillet radius (or toggle off if already filleted)
+                      const newFillet = currentFillet > 0 ? 0 : 2
+                      
+                      updateFeature(projectId, info.featureId, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...content, fillet_radius: newFillet, chamfer_distance: 0 }
+                        }
+                      })
+                      setShowPropertiesPanel(true)
+                    }
+                  }
                   setContextMenu({ ...contextMenu, visible: false })
                 }}
               >
@@ -1836,8 +1853,24 @@ export default function EditorPage() {
               <button
                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2"
                 onClick={() => {
-                  // TODO: Add chamfer operation
-                  console.log('Chamfer selected', contextMenu.selectionInfo)
+                  const info = contextMenu.selectionInfo
+                  if (info) {
+                    const feature = project.features.find(f => f.id === info.featureId)
+                    if (feature) {
+                      const content = feature.patch?.content as any
+                      const currentChamfer = content?.chamfer_distance || 0
+                      // Add 2mm chamfer distance (or toggle off if already chamfered)
+                      const newChamfer = currentChamfer > 0 ? 0 : 2
+                      
+                      updateFeature(projectId, info.featureId, {
+                        patch: {
+                          ...feature.patch,
+                          content: { ...content, chamfer_distance: newChamfer, fillet_radius: 0 }
+                        }
+                      })
+                      setShowPropertiesPanel(true)
+                    }
+                  }
                   setContextMenu({ ...contextMenu, visible: false })
                 }}
               >

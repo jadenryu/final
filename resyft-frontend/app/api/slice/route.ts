@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { xai } from '@ai-sdk/xai'
 import { generateObject } from 'ai'
 import { z } from 'zod'
+import type { LanguageModelV1 } from '@ai-sdk/provider'
 
 // Define the schema for slicer settings using Zod
 const SlicerSettingsSchema = z.object({
@@ -110,9 +111,12 @@ async function suggestSettings(features: any[]) {
   try {
     // Use structured output with xai SDK
     const result = await generateObject({
-      model: xai('grok-4-1-fast-non-reasoning'),
+      model: xai('grok-beta') as any, // Type cast to work with current AI SDK version
       schema: SlicerSettingsSchema,
-      system: `You are an expert 3D printing consultant. Analyze the CAD model geometry and suggest optimal FDM 3D printing settings.
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert 3D printing consultant. Analyze the CAD model geometry and suggest optimal FDM 3D printing settings.
 
 Consider these factors:
 - Layer height: 0.1mm for fine detail, 0.2mm standard, 0.3mm for speed
@@ -121,8 +125,11 @@ Consider these factors:
 - Adhesion: brim for tall/thin parts, raft for poor bed adhesion, skirt normally
 - Speed: 30-50mm/s for detail, 60-80mm/s for fast prints
 - Walls: 2-3 for normal, 4+ for strength
-- Retraction: enable to prevent stringing, 5mm at 45mm/s typical`,
-      prompt: `Analyze this 3D model and suggest optimal print settings:
+- Retraction: enable to prevent stringing, 5mm at 45mm/s typical`
+        },
+        {
+          role: 'user',
+          content: `Analyze this 3D model and suggest optimal print settings:
 
 Model contains ${features.length} shape(s):
 ${modelDescription || 'No shapes defined'}
@@ -131,7 +138,9 @@ Bounding box: ${totalWidth.toFixed(1)}mm x ${totalHeight.toFixed(1)}mm x ${total
 ${hasOverhangs ? 'Model likely has overhangs that may need supports.' : ''}
 ${isThin ? 'Model has tall thin features that may need adhesion help.' : ''}
 
-Suggest settings optimized for successful printing of this specific geometry.`,
+Suggest settings optimized for successful printing of this specific geometry.`
+        }
+      ],
     })
 
     return NextResponse.json({

@@ -246,11 +246,11 @@ function FeatureTreeItem({
             {getFeatureIcon()}
           </span>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             <div className="text-sm font-medium truncate">
               {getFeatureName()}
             </div>
-            <div className="text-xs text-slate-500 font-mono truncate">
+            <div className="text-xs text-slate-500 font-mono break-all">
               {feature.id}
             </div>
           </div>

@@ -1311,7 +1311,7 @@ export default function ThreeCanvas({
             selectedFaceIndex={selectedFaceInfo?.featureId === feature.id ? selectedFaceInfo.faceIndex : undefined}
             selectedEdgeIndex={selectedEdgeInfo?.featureId === feature.id ? selectedEdgeInfo.edgeIndex : undefined}
           />
-          <ShapeEdges feature={feature} allFeatures={features} />
+          {/* <ShapeEdges feature={feature} allFeatures={features} /> */}
         </group>
       ))}
 

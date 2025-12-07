@@ -1,6 +1,6 @@
 # Configuration Requirements
 
-This document lists all the required environment variables and configuration settings needed to run the Resyft CAD application.
+This document lists all the required environment variables and configuration settings needed to run the modlr application.
 
 ## Frontend Environment Variables
 

@@ -136,7 +136,7 @@ export default function CADProjectsPage() {
             <div className="flex items-center gap-4">
               <Link href="/" className="flex items-center gap-2">
                 <Box className="w-8 h-8 text-brand-600" />
-                <span className="text-xl font-semibold text-gray-900">Resyft CAD</span>
+                <span className="text-xl font-semibold text-gray-900">modlr</span>
               </Link>
             </div>
 

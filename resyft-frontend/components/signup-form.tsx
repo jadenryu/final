@@ -45,7 +45,7 @@ export function SignupForm({
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl playfair-bold">Create Account</h1>
         <p className="text-muted-foreground text-sm text-balance">
-          Sign up to start analyzing research papers
+          Sign up to start designing with AI
         </p>
       </div>
       <div className="grid gap-6">
@@ -73,7 +73,7 @@ export function SignupForm({
             required 
           />
         </div>
-        <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
+        <Button type="submit" className="w-full bg-brand-600 hover:bg-brand-700" disabled={loading}>
           {loading ? 'Creating Account...' : 'Sign Up'}
         </Button>
       </div>
@@ -90,7 +90,7 @@ export function SignupForm({
       
       <div className="text-center text-sm">
         Already have an account?{" "}
-        <a href="/login" className="underline underline-offset-4 text-blue-600 hover:text-blue-700">
+        <a href="/login" className="underline underline-offset-4 text-brand-600 hover:text-brand-700">
           Sign in
         </a>
       </div>

@@ -1,14 +1,14 @@
 Next --> cont.
 
-1. please ensure users can manully edit structures using common CAD-based manipulations. ensure it is a standard CAD navigation menu
-with all features of platforms such as Onshape. 
+1. i want to use RAG (retireval augmented generation) as wlel as xAi's long context models to pull common designs the user uses 
+in their projects. please incoporate these features, but keep it subtle. i know i need to input manual info to make this happen. 
+pleaes let me know what info i have to put.
 
-2. ensure users can manully edit all parts of a structure, including size, dimensions, and whatever else they may need to build a 
-completed structure.
+2. please allow users to use common onshape tools such as extrude, fillet, cutout, and other features using nlp. allow them to click on 
+structures (features) to revela their dimensions and change their size as well. 
 
-3. deltet the compoenent in the cnavas that says your canvas is empty and related materials in the center of hte canvas you added previously just now.
+3. ensure user messages are shown in the chat as well. 
 
-4. allow users to toggle on and off a grid mode that will dictate the dimensions of the canvas on the gridlines. i see light gridlines right now,
-but users should be able to dtermine the size of those grids. 
+4. ensure all buttons are functional throughout the program, especially those in the navigation bar (tools) in the cad ai studio. 
 
-5. fix sidebar animations shown in the navigation bar, they make the sidebars tweak out. 
+5. ensure sidebar dimensions and animations are consistent throuhgout the program. 

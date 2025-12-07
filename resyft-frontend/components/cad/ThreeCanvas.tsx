@@ -5,6 +5,21 @@ import { Canvas, useThree } from "@react-three/fiber"
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line } from "@react-three/drei"
 import * as THREE from "three"
 import type { Feature } from "../../lib/cad/store"
+import type { StudioFeature } from "../../lib/cad/studio-store"
+
+// Union type to accept both Feature and StudioFeature
+type AnyFeature = Feature | StudioFeature
+
+// Helper to get content from either feature type
+function getFeatureContent(feature: AnyFeature): any {
+  if ('patch' in feature && feature.patch) {
+    return feature.patch.content
+  }
+  if ('content' in feature) {
+    return feature.content
+  }
+  return null
+}
 
 // Camera positions for different views
 const CAMERA_VIEWS = {
@@ -16,11 +31,11 @@ const CAMERA_VIEWS = {
 }
 
 // Helper to get sketch geometry from store features
-function getSketchGeometry(sketchId: string, features: Feature[]): { points: [number, number][]; plane: string } | null {
+function getSketchGeometry(sketchId: string, features: AnyFeature[]): { points: [number, number][]; plane: string } | null {
   const sketchFeature = features.find(f => f.id === sketchId)
   if (!sketchFeature) return null
 
-  const content = sketchFeature.patch?.content as any
+  const content = getFeatureContent(sketchFeature)
   if (content?.primitive !== 'sketch' && content?.type !== 'sketch') return null
 
   const shapes = content.shapes || []
@@ -49,9 +64,9 @@ function getSketchGeometry(sketchId: string, features: Feature[]): { points: [nu
 }
 
 // Individual shape component that respects visibility
-function Shape({ feature, isSelected, allFeatures }: { feature: Feature; isSelected: boolean; allFeatures: Feature[] }) {
+function Shape({ feature, isSelected, allFeatures }: { feature: AnyFeature; isSelected: boolean; allFeatures: AnyFeature[] }) {
   const meshRef = useRef<THREE.Mesh>(null)
-  const content = feature.patch?.content as any
+  const content = getFeatureContent(feature)
 
   // Extract primitive values to use as dependencies
   const type = content?.type || content?.primitive || 'cube'
@@ -66,7 +81,7 @@ function Shape({ feature, isSelected, allFeatures }: { feature: Feature; isSelec
   const rotX = ((content?.rotation?.[0] || 0) * Math.PI) / 180
   const rotY = ((content?.rotation?.[1] || 0) * Math.PI) / 180
   const rotZ = ((content?.rotation?.[2] || 0) * Math.PI) / 180
-  const contentColor = content?.color || "#14b8a6"
+  const contentColor = content?.color || "#3342d2"
 
   // Fillet/chamfer specific values
   const filletRadius = content?.fillet_radius || content?.radius || 2
@@ -308,8 +323,8 @@ function Shape({ feature, isSelected, allFeatures }: { feature: Feature; isSelec
 }
 
 // Wireframe edges for each shape
-function ShapeEdges({ feature, allFeatures }: { feature: Feature; allFeatures: Feature[] }) {
-  const content = feature.patch?.content as any
+function ShapeEdges({ feature, allFeatures }: { feature: AnyFeature; allFeatures: AnyFeature[] }) {
+  const content = getFeatureContent(feature)
 
   // Extract primitive values to use as dependencies
   const type = content?.type || content?.primitive || 'cube'
@@ -571,23 +586,27 @@ function Axes() {
 }
 
 interface ThreeCanvasProps {
-  features: Feature[]
-  selectedFeatureIds: string[]
-  viewMode: string
-  showGrid: boolean
-  showAxes: boolean
+  features: AnyFeature[]
+  selectedFeatureId?: string | null
+  selectedFeatureIds?: string[]
+  viewMode?: string
+  showGrid?: boolean
+  showAxes?: boolean
   gridSize?: number
   onSelectFeature?: (id: string) => void
 }
 
 export default function ThreeCanvas({
   features,
-  selectedFeatureIds,
-  viewMode,
-  showGrid,
-  showAxes,
+  selectedFeatureId,
+  selectedFeatureIds = [],
+  viewMode = '3d',
+  showGrid = true,
+  showAxes = true,
   gridSize = 10,
 }: ThreeCanvasProps) {
+  // Support both selectedFeatureId (single) and selectedFeatureIds (array)
+  const activeSelectedIds = selectedFeatureId ? [selectedFeatureId] : selectedFeatureIds
   return (
     <Canvas
       camera={{ position: [50, 50, 50], fov: 50 }}
@@ -628,7 +647,7 @@ export default function ThreeCanvas({
         <group key={feature.id}>
           <Shape
             feature={feature}
-            isSelected={selectedFeatureIds.includes(feature.id)}
+            isSelected={activeSelectedIds.includes(feature.id)}
             allFeatures={features}
           />
           <ShapeEdges feature={feature} allFeatures={features} />

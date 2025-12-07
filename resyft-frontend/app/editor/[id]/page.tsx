@@ -211,7 +211,7 @@ function FeatureTreeItem({
       <div
         className={`flex flex-col gap-1 px-2 py-2 rounded-md cursor-pointer group transition-colors ${
           isSelected
-            ? 'bg-teal-100 text-teal-900 border border-teal-300'
+            ? 'bg-brand-100 text-brand-900 border border-brand-300'
             : 'hover:bg-slate-100 border border-transparent'
         }`}
         onClick={() => onSelect(feature.id)}
@@ -228,7 +228,7 @@ function FeatureTreeItem({
             <span className="w-4" />
           )}
 
-          <span className={`flex-shrink-0 ${feature.visible ? 'text-teal-600' : 'text-slate-400'}`}>
+          <span className={`flex-shrink-0 ${feature.visible ? 'text-brand-600' : 'text-slate-400'}`}>
             {getFeatureIcon()}
           </span>
 
@@ -400,7 +400,7 @@ function ChatMessage({ message }: { message: { role: string; content: string } }
       <div
         className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
           message.role === 'user'
-            ? 'bg-teal-600 text-white'
+            ? 'bg-brand-600 text-white'
             : 'bg-slate-100 text-slate-900'
         }`}
       >
@@ -438,7 +438,7 @@ function PropertiesPanel({
     <div className="absolute top-4 right-4 w-72 bg-white rounded-lg shadow-xl border border-slate-200 z-10">
       <div className="p-3 border-b border-slate-200 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-          <Settings className="w-4 h-4 text-teal-600" />
+          <Settings className="w-4 h-4 text-brand-600" />
           Properties
         </h3>
         <button
@@ -716,21 +716,21 @@ function PropertiesPanel({
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={content?.color || '#14b8a6'}
+              value={content?.color || '#3342d2'}
               onChange={(e) => updateContent({ color: e.target.value })}
               className="w-10 h-8 rounded border border-slate-200 cursor-pointer"
             />
             <Input
               type="text"
-              value={content?.color || '#14b8a6'}
+              value={content?.color || '#3342d2'}
               onChange={(e) => updateContent({ color: e.target.value })}
               className="h-8 text-sm flex-1"
-              placeholder="#14b8a6"
+              placeholder="#3342d2"
             />
           </div>
           {/* Quick color presets */}
           <div className="flex gap-1 flex-wrap">
-            {['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#6b7280'].map(color => (
+            {['#ef4444', '#f97316', '#eab308', '#22c55e', '#3342d2', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#6b7280'].map(color => (
               <button
                 key={color}
                 onClick={() => updateContent({ color })}
@@ -811,12 +811,28 @@ export default function EditorPage() {
     setIsGenerating(true)
   
     try {
-      // Build a context message about current features for the AI
-      const currentFeatureIds = project?.features.map(f => f.id) || []
-      const contextMessage = currentFeatureIds.length > 0 
-        ? `Current features in scene: ${currentFeatureIds.join(', ')}`
-        : 'Scene is empty - no features exist yet.'
-  
+      // Build detailed scene context for the AI - include all shapes with their properties
+      const sceneContext = project?.features.map(f => {
+        const content = f.patch?.content as any
+        if (!content) return null
+        return {
+          id: f.id,
+          type: content.primitive || content.type || 'unknown',
+          position: content.position || [0, 0, 0],
+          rotation: content.rotation || [0, 0, 0],
+          dimensions: {
+            width: content.width,
+            height: content.height,
+            depth: content.depth,
+            radius: content.radius,
+            tube: content.tube,
+            radiusTop: content.radiusTop,
+            radiusBottom: content.radiusBottom,
+          },
+          color: content.color
+        }
+      }).filter(Boolean) || []
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -828,7 +844,8 @@ export default function EditorPage() {
               role: m.role,
               content: m.content
             }))
-          ]
+          ],
+          sceneContext: sceneContext
         })
       })
   
@@ -943,9 +960,9 @@ export default function EditorPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-lg font-semibold text-slate-900 mb-2">Project not found</h2>
-          <Button onClick={() => router.push('/')} variant="outline">
+          <Button onClick={() => router.push('/projects')} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            Back to Projects
           </Button>
         </div>
       </div>
@@ -959,7 +976,7 @@ export default function EditorPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/projects')}
           className="text-slate-300 hover:text-white hover:bg-slate-700"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1144,7 +1161,7 @@ export default function EditorPage() {
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setShowSettingsDialog(false)} className="bg-teal-600 hover:bg-teal-700">
+            <Button onClick={() => setShowSettingsDialog(false)} className="bg-teal-600 hover:bg-brand-700">
               Done
             </Button>
           </DialogFooter>
@@ -1165,7 +1182,7 @@ export default function EditorPage() {
           <div className="w-64 flex flex-col h-full" style={{ opacity: leftSidebarOpen ? 1 : 0, transition: 'opacity 150ms ease-out' }}>
             <div className="p-3 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
               <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-teal-600" />
+                <Layers className="w-4 h-4 text-brand-600" />
                 Features
               </h2>
               <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
@@ -1214,7 +1231,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={activeTool === 'select' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'select' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+              className={`w-9 h-9 p-0 ${activeTool === 'select' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
               onClick={() => setActiveTool('select')}
               title="Select (V)"
             >
@@ -1223,7 +1240,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={activeTool === 'move' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'move' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+              className={`w-9 h-9 p-0 ${activeTool === 'move' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
               onClick={() => setActiveTool('move')}
               title="Move (G)"
             >
@@ -1232,7 +1249,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={activeTool === 'rotate' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'rotate' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+              className={`w-9 h-9 p-0 ${activeTool === 'rotate' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
               onClick={() => setActiveTool('rotate')}
               title="Rotate (R)"
             >
@@ -1241,7 +1258,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={activeTool === 'scale' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'scale' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+              className={`w-9 h-9 p-0 ${activeTool === 'scale' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
               onClick={() => setActiveTool('scale')}
               title="Scale (S)"
             >
@@ -1251,7 +1268,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={activeTool === 'pan' ? 'default' : 'ghost'}
-              className={`w-9 h-9 p-0 ${activeTool === 'pan' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+              className={`w-9 h-9 p-0 ${activeTool === 'pan' ? 'bg-teal-600 hover:bg-brand-700' : ''}`}
               onClick={() => setActiveTool('pan')}
               title="Pan (H)"
             >
@@ -1288,7 +1305,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === '3d' ? 'default' : 'ghost'}
-              className={editor.viewMode === '3d' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+              className={editor.viewMode === '3d' ? 'bg-teal-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('3d')}
             >
               <Move3d className="w-4 h-4 mr-1" />
@@ -1297,7 +1314,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'front' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'front' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+              className={editor.viewMode === 'front' ? 'bg-teal-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('front')}
             >
               Front
@@ -1305,7 +1322,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'top' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'top' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+              className={editor.viewMode === 'top' ? 'bg-teal-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('top')}
             >
               Top
@@ -1313,7 +1330,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'right' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'right' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+              className={editor.viewMode === 'right' ? 'bg-teal-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('right')}
             >
               Right
@@ -1321,7 +1338,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'isometric' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'isometric' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+              className={editor.viewMode === 'isometric' ? 'bg-teal-600 hover:bg-brand-700' : ''}
               onClick={() => setViewMode('isometric')}
             >
               <Rotate3d className="w-4 h-4 mr-1" />
@@ -1334,7 +1351,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={project.settings.showGrid ? 'default' : 'ghost'}
-              className={project.settings.showGrid ? 'bg-teal-600 hover:bg-teal-700' : ''}
+              className={project.settings.showGrid ? 'bg-teal-600 hover:bg-brand-700' : ''}
               onClick={() => updateProject(projectId, {
                 settings: { ...project.settings, showGrid: !project.settings.showGrid }
               })}
@@ -1392,7 +1409,7 @@ export default function EditorPage() {
           <div className="w-80 flex flex-col h-full" style={{ opacity: rightSidebarOpen ? 1 : 0, transition: 'opacity 150ms ease-out' }}>
             <div className="p-3 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
               <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-teal-600" />
+                <MessageSquare className="w-4 h-4 text-brand-600" />
                 AI Assistant
               </h2>
             </div>
@@ -1414,7 +1431,7 @@ export default function EditorPage() {
                 {editor.isGenerating && (
                   <div className="flex justify-start">
                     <div className="bg-slate-100 rounded-lg px-3 py-2 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-600" />
                       <span className="text-sm text-slate-500">Generating...</span>
                     </div>
                   </div>
@@ -1436,7 +1453,7 @@ export default function EditorPage() {
                 <Button
                   onClick={handleSendMessage}
                   disabled={!chatInput.trim() || editor.isGenerating}
-                  className="bg-teal-600 hover:bg-teal-700"
+                  className="bg-teal-600 hover:bg-brand-700"
                 >
                   <Send className="w-4 h-4" />
                 </Button>

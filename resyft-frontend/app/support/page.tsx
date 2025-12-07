@@ -104,9 +104,9 @@ export default function SupportPage() {
                 Thank you for contacting us. We'll respond within 24 hours via email.
               </p>
               <div className="space-y-3">
-                <Link href="/overview">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                    Return to Dashboard
+                <Link href="/projects">
+                  <Button className="w-full bg-brand-600 hover:bg-brand-700">
+                    Return to Projects
                   </Button>
                 </Link>
                 <Button variant="outline" onClick={() => setSubmitted(false)} className="w-full">
@@ -127,7 +127,7 @@ export default function SupportPage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/overview">
+              <Link href="/projects">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back

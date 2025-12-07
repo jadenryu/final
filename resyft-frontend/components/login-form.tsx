@@ -70,7 +70,7 @@ export function LoginForm({
             required 
           />
         </div>
-        <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={loading}>
+        <Button type="submit" className="w-full bg-brand-600 hover:bg-brand-700" disabled={loading}>
           {loading ? 'Signing In...' : 'Sign In'}
         </Button>
       </div>
@@ -83,7 +83,7 @@ export function LoginForm({
       
       <div className="text-center text-sm">
         Don&apos;t have an account?{" "}
-        <a href="/signup" className="underline underline-offset-4 text-teal-600 hover:text-teal-700">
+        <a href="/signup" className="underline underline-offset-4 text-brand-600 hover:text-brand-700">
           Sign up
         </a>
       </div>

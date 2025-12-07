@@ -34,7 +34,7 @@ export default function AboutPage() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center space-x-2"
           >
-            <Box className="w-8 h-8 text-teal-600" />
+            <Box className="w-8 h-8 text-brand-600" />
             <span className="text-xl font-semibold text-gray-900">
               Resyft CAD
             </span>
@@ -71,7 +71,7 @@ export default function AboutPage() {
               </Button>
             </Link>
             <Link href="/signup">
-              <Button className="bg-teal-600 hover:bg-teal-700 text-white">
+              <Button className="bg-brand-600 hover:bg-brand-700 text-white">
                 Get Started
               </Button>
             </Link>
@@ -88,12 +88,12 @@ export default function AboutPage() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <Badge className="bg-teal-50 text-teal-700 border-teal-200 px-4 py-2 mb-6">
+            <Badge className="bg-brand-50 text-brand-700 border-brand-200 px-4 py-2 mb-6">
               AI-Powered CAD Design
             </Badge>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Design 3D Models with<br />
-              <span className="text-teal-600">Natural Language</span>
+              <span className="text-brand-600">Natural Language</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
               Resyft CAD is an AI-powered 3D modeling platform that transforms your ideas into professional CAD designs.
@@ -101,7 +101,7 @@ export default function AboutPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/projects">
-                <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white h-12 px-8">
+                <Button size="lg" className="bg-brand-600 hover:bg-brand-700 text-white h-12 px-8">
                   Start Designing
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -137,32 +137,32 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: <MessageSquare className="w-8 h-8 text-teal-600" />,
+                icon: <MessageSquare className="w-8 h-8 text-brand-600" />,
                 title: "Natural Language Design",
                 description: "Describe shapes in plain English. Say 'create a 50mm cube' or 'add a cylinder with 10mm radius' and watch your design materialize instantly."
               },
               {
-                icon: <Layers className="w-8 h-8 text-teal-600" />,
+                icon: <Layers className="w-8 h-8 text-brand-600" />,
                 title: "Advanced Operations",
                 description: "Full support for extrude, revolve, fillet, chamfer, and sketch operations. Create complex geometries from 2D profiles with parametric control."
               },
               {
-                icon: <Move3d className="w-8 h-8 text-teal-600" />,
+                icon: <Move3d className="w-8 h-8 text-brand-600" />,
                 title: "Real-time 3D Visualization",
                 description: "Interactive 3D canvas with multiple view modes, grid overlays, and precision axis indicators. Rotate, zoom, and inspect your designs from any angle."
               },
               {
-                icon: <Pencil className="w-8 h-8 text-teal-600" />,
+                icon: <Pencil className="w-8 h-8 text-brand-600" />,
                 title: "Sketch & Extrude Workflow",
                 description: "Create 2D sketches with rectangles, circles, and polygons, then extrude them into 3D solids. Classic CAD workflow made intuitive."
               },
               {
-                icon: <RotateCw className="w-8 h-8 text-teal-600" />,
+                icon: <RotateCw className="w-8 h-8 text-brand-600" />,
                 title: "Revolve Operations",
                 description: "Generate complex rotational parts by revolving 2D profiles around any axis. Perfect for vases, bottles, and turned components."
               },
               {
-                icon: <Cpu className="w-8 h-8 text-teal-600" />,
+                icon: <Cpu className="w-8 h-8 text-brand-600" />,
                 title: "AI-Powered Assistance",
                 description: "Our intelligent CAD assistant understands engineering context and generates precise, manufacturable geometry from your descriptions."
               }
@@ -174,7 +174,7 @@ export default function AboutPage() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="h-full border-gray-200 hover:border-teal-200 hover:shadow-lg transition-all">
+                <Card className="h-full border-gray-200 hover:border-brand-200 hover:shadow-lg transition-all">
                   <CardContent className="p-6">
                     <div className="mb-4">{feature.icon}</div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
@@ -231,7 +231,7 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 className="text-center"
               >
-                <div className="text-6xl font-bold text-teal-100 mb-4">{item.step}</div>
+                <div className="text-6xl font-bold text-brand-100 mb-4">{item.step}</div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">{item.title}</h3>
                 <p className="text-gray-600">{item.description}</p>
               </motion.div>
@@ -271,7 +271,7 @@ export default function AboutPage() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="text-4xl md:text-5xl font-bold text-teal-600 mb-2">
+                <div className="text-4xl md:text-5xl font-bold text-brand-600 mb-2">
                   {stat.number}
                 </div>
                 <div className="text-gray-600">{stat.label}</div>
@@ -319,7 +319,7 @@ export default function AboutPage() {
                   viewport={{ once: true }}
                   className="bg-white/10 rounded-xl p-4 backdrop-blur-sm"
                 >
-                  <h4 className="font-semibold text-teal-400 mb-1">{op.name}</h4>
+                  <h4 className="font-semibold text-brand-400 mb-1">{op.name}</h4>
                   <p className="text-sm text-gray-400">{op.desc}</p>
                 </motion.div>
               ))}
@@ -379,7 +379,7 @@ export default function AboutPage() {
                 transition={{ duration: 0.4, delay: index * 0.05 }}
               >
                 <AccordionItem value={`item-${index}`} className="border-b border-gray-200">
-                  <AccordionTrigger className="text-left font-semibold text-gray-900 hover:text-teal-600 py-6 text-lg">
+                  <AccordionTrigger className="text-left font-semibold text-gray-900 hover:text-brand-600 py-6 text-lg">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-gray-600 pb-6 leading-relaxed">
@@ -409,7 +409,7 @@ export default function AboutPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
               <Link href="/projects">
-                <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white h-12 px-8">
+                <Button size="lg" className="bg-brand-600 hover:bg-brand-700 text-white h-12 px-8">
                   Start Your First Project
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -428,7 +428,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
-                <Box className="w-10 h-10 text-teal-500" />
+                <Box className="w-10 h-10 text-brand-500" />
                 <span className="text-2xl font-bold text-white">
                   Resyft CAD
                 </span>

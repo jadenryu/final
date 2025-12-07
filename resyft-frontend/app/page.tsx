@@ -1,394 +1,477 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
+import { useState } from 'react'
+import { Button } from '../components/ui/button'
+import { Card, CardContent } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
+import { motion } from 'framer-motion'
+import Link from 'next/link'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu"
-import { Label } from "../components/ui/label"
-import { useCADStore } from "../lib/cad/store"
-import {
-  PenTool,
-  Plus,
-  Search,
-  MoreVertical,
-  Trash2,
-  Copy,
-  Edit,
-  Download,
-  Upload,
-  FolderOpen,
-  Clock,
+  ArrowRight,
+  Sparkles,
   Box,
   Layers,
-  Settings,
-  Grid3X3
-} from "lucide-react"
+  MessageSquare,
+  Cpu,
+  Zap,
+  Shield,
+  Users,
+  Target,
+  Pencil,
+  RotateCw,
+  Move3d,
+} from 'lucide-react'
 
-export default function ProjectDashboard() {
-  const router = useRouter()
-  const { projects, createProject, deleteProject, duplicateProject, setActiveProject, exportProject, importProject } = useCADStore()
-
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
-  const [newProjectName, setNewProjectName] = useState("")
-  const [newProjectDescription, setNewProjectDescription] = useState("")
-  const [importJson, setImportJson] = useState("")
-  const [editingProject, setEditingProject] = useState<string | null>(null)
-  const [editName, setEditName] = useState("")
-
-  const filteredProjects = projects.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const handleCreateProject = () => {
-    if (!newProjectName.trim()) return
-    const project = createProject(newProjectName.trim(), newProjectDescription.trim())
-    setNewProjectName("")
-    setNewProjectDescription("")
-    setIsCreateDialogOpen(false)
-    router.push(`/editor/${project.id}`)
-  }
-
-  const handleOpenProject = (projectId: string) => {
-    setActiveProject(projectId)
-    router.push(`/editor/${projectId}`)
-  }
-
-  const handleDeleteProject = (projectId: string) => {
-    if (confirm("Are you sure you want to delete this project? This cannot be undone.")) {
-      deleteProject(projectId)
-    }
-  }
-
-  const handleDuplicateProject = (projectId: string) => {
-    duplicateProject(projectId)
-  }
-
-  const handleExportProject = (projectId: string) => {
-    const json = exportProject(projectId)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${projects.find(p => p.id === projectId)?.name || 'project'}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImportProject = () => {
-    if (!importJson.trim()) return
-    const project = importProject(importJson.trim())
-    if (project) {
-      setImportJson("")
-      setIsImportDialogOpen(false)
-    } else {
-      alert("Invalid project file. Please check the format.")
-    }
-  }
-
-  const handleRenameProject = (projectId: string, newName: string) => {
-    if (!newName.trim()) return
-    useCADStore.getState().updateProject(projectId, { name: newName.trim() })
-    setEditingProject(null)
-    setEditName("")
-  }
-
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
-
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-                <PenTool className="w-5 h-5 text-teal-600" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">CAD Designer</h1>
-                <p className="text-sm text-slate-500">AI-Powered Generative CAD</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Import
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Import Project</DialogTitle>
-                    <DialogDescription>
-                      Paste the JSON content of a previously exported project.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <textarea
-                      value={importJson}
-                      onChange={(e) => setImportJson(e.target.value)}
-                      placeholder="Paste project JSON here..."
-                      className="w-full h-48 p-3 border rounded-lg font-mono text-sm resize-none"
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleImportProject} className="bg-teal-600 hover:bg-teal-700">
-                      Import Project
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50/30">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-lg border-b border-gray-200 z-50">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center space-x-2"
+          >
+            <Box className="w-8 h-8 text-brand-600" />
+            <span className="text-xl font-semibold text-gray-900">
+              Resyft CAD
+            </span>
+          </motion.div>
 
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-teal-600 hover:bg-teal-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Project
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New Project</DialogTitle>
-                    <DialogDescription>
-                      Start a new CAD design project from scratch.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Project Name</Label>
-                      <Input
-                        id="name"
-                        value={newProjectName}
-                        onChange={(e) => setNewProjectName(e.target.value)}
-                        placeholder="My CAD Project"
-                        onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Description (optional)</Label>
-                      <Input
-                        id="description"
-                        value={newProjectDescription}
-                        onChange={(e) => setNewProjectDescription(e.target.value)}
-                        placeholder="A brief description of your project"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleCreateProject}
-                      className="bg-teal-600 hover:bg-teal-700"
-                      disabled={!newProjectName.trim()}
-                    >
-                      Create Project
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
+          {/* Navigation Links */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="hidden md:flex items-center space-x-8"
+          >
+            <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">
+              Features
+            </a>
+            <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 transition-colors">
+              How It Works
+            </a>
+            <a href="#faq-section" className="text-gray-600 hover:text-gray-900 transition-colors">
+              FAQ
+            </a>
+            <Link href="/about" className="text-gray-600 hover:text-gray-900 transition-colors">
+              About
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center space-x-4"
+          >
+            <Link href="/login">
+              <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button className="bg-brand-600 hover:bg-brand-700 text-white">
+                Get Started
+              </Button>
+            </Link>
+          </motion.div>
         </div>
-      </header>
+      </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Search and Filters */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search projects..."
-              className="pl-10"
-            />
-          </div>
-          <div className="text-sm text-slate-500">
-            {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
-          </div>
-        </div>
-
-        {/* Projects Grid */}
-        {filteredProjects.length === 0 ? (
-          <div className="text-center py-16">
-            {projects.length === 0 ? (
-              <>
-                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <FolderOpen className="w-8 h-8 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No projects yet</h3>
-                <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-                  Create your first CAD project to start designing with AI assistance.
-                </p>
-                <Button
-                  onClick={() => setIsCreateDialogOpen(true)}
-                  className="bg-teal-600 hover:bg-teal-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Your First Project
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <Badge className="bg-brand-50 text-brand-700 border-brand-200 px-4 py-2 mb-6">
+              AI-Powered CAD Design
+            </Badge>
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Design 3D Models with<br />
+              <span className="text-brand-600">Natural Language</span>
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
+              Resyft CAD is an AI-powered 3D modeling platform that transforms your ideas into professional CAD designs.
+              Simply describe what you want to create, and watch as your vision comes to life in real-time.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/studio">
+                <Button size="lg" className="bg-brand-600 hover:bg-brand-700 text-white h-14 px-10 text-lg">
+                  Launch CAD Studio
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-              </>
-            ) : (
-              <>
-                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-8 h-8 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No matching projects</h3>
-                <p className="text-slate-500">Try a different search term.</p>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <Card
-                key={project.id}
-                className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-slate-200 hover:border-teal-300"
-                onClick={() => handleOpenProject(project.id)}
+              </Link>
+              <a href="#features">
+                <Button size="lg" variant="outline" className="h-14 px-8 text-lg">
+                  Learn More
+                </Button>
+              </a>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-24 px-4 bg-white">
+        <div className="container mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Powerful CAD Features
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Professional-grade 3D modeling tools powered by cutting-edge AI technology
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <MessageSquare className="w-8 h-8 text-brand-600" />,
+                title: "Natural Language Design",
+                description: "Describe shapes in plain English. Say 'create a 50mm cube' or 'add a cylinder with 10mm radius' and watch your design materialize instantly."
+              },
+              {
+                icon: <Layers className="w-8 h-8 text-brand-600" />,
+                title: "Advanced Operations",
+                description: "Full support for extrude, revolve, fillet, chamfer, and sketch operations. Create complex geometries from 2D profiles with parametric control."
+              },
+              {
+                icon: <Move3d className="w-8 h-8 text-brand-600" />,
+                title: "Real-time 3D Visualization",
+                description: "Interactive 3D canvas with multiple view modes, grid overlays, and precision axis indicators. Rotate, zoom, and inspect your designs from any angle."
+              },
+              {
+                icon: <Pencil className="w-8 h-8 text-brand-600" />,
+                title: "Sketch & Extrude Workflow",
+                description: "Create 2D sketches with rectangles, circles, and polygons, then extrude them into 3D solids. Classic CAD workflow made intuitive."
+              },
+              {
+                icon: <RotateCw className="w-8 h-8 text-brand-600" />,
+                title: "Revolve Operations",
+                description: "Generate complex rotational parts by revolving 2D profiles around any axis. Perfect for vases, bottles, and turned components."
+              },
+              {
+                icon: <Cpu className="w-8 h-8 text-brand-600" />,
+                title: "AI-Powered Assistance",
+                description: "Our intelligent CAD assistant understands engineering context and generates precise, manufacturable geometry from your descriptions."
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      {editingProject === project.id ? (
-                        <Input
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          onBlur={() => handleRenameProject(project.id, editName)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleRenameProject(project.id, editName)
-                            if (e.key === 'Escape') setEditingProject(null)
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          autoFocus
-                          className="h-8"
-                        />
-                      ) : (
-                        <CardTitle className="text-lg truncate">{project.name}</CardTitle>
-                      )}
-                      {project.description && (
-                        <CardDescription className="mt-1 line-clamp-2">
-                          {project.description}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={() => handleOpenProject(project.id)}>
-                          <FolderOpen className="w-4 h-4 mr-2" />
-                          Open
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          setEditingProject(project.id)
-                          setEditName(project.name)
-                        }}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicateProject(project.id)}>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleExportProject(project.id)}>
-                          <Download className="w-4 h-4 mr-2" />
-                          Export
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteProject(project.id)}
-                          className="text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Thumbnail placeholder */}
-                  <div className="aspect-video bg-slate-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                    {project.features.length > 0 ? (
-                      <div className="text-center">
-                        <Grid3X3 className="w-8 h-8 text-slate-400 mx-auto mb-1" />
-                        <span className="text-xs text-slate-500">{project.features.length} features</span>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <Box className="w-8 h-8 text-slate-300 mx-auto" />
-                        <span className="text-xs text-slate-400">Empty project</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center justify-between text-sm text-slate-500">
-                    <div className="flex items-center gap-1">
-                      <Layers className="w-4 h-4" />
-                      <span>{project.features.length} features</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{formatDate(project.updatedAt)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                <Card className="h-full border-gray-200 hover:border-brand-200 hover:shadow-lg transition-all">
+                  <CardContent className="p-6">
+                    <div className="mb-4">{feature.icon}</div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
+                    <p className="text-gray-600">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
-
-            {/* New Project Card */}
-            <Card
-              className="border-dashed border-2 border-slate-200 hover:border-teal-300 hover:bg-teal-50/50 transition-all cursor-pointer flex items-center justify-center min-h-[280px]"
-              onClick={() => setIsCreateDialogOpen(true)}
-            >
-              <div className="text-center p-6">
-                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Plus className="w-6 h-6 text-teal-600" />
-                </div>
-                <p className="font-medium text-slate-700">Create New Project</p>
-                <p className="text-sm text-slate-500 mt-1">Start from scratch</p>
-              </div>
-            </Card>
           </div>
-        )}
-      </main>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-24 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              How It Works
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From idea to 3D model in three simple steps
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Describe Your Design",
+                description: "Use natural language to describe what you want to create. Be as specific or general as you like - our AI understands engineering terminology and design intent."
+              },
+              {
+                step: "02",
+                title: "AI Generates Geometry",
+                description: "Our CAD AI interprets your request and generates precise 3D geometry. Complex shapes, assemblies, and parametric features are all supported."
+              },
+              {
+                step: "03",
+                title: "Refine & Export",
+                description: "View your design in the interactive 3D canvas, make adjustments through conversation, and export your finished model for manufacturing or further development."
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="text-center"
+              >
+                <div className="text-6xl font-bold text-brand-100 mb-4">{item.step}</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{item.title}</h3>
+                <p className="text-gray-600">{item.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Built for Designers & Engineers
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Join professionals who are accelerating their design workflow with AI
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
+            {[
+              { number: "10+", label: "Primitive Types" },
+              { number: "5", label: "CAD Operations" },
+              { number: "< 2s", label: "Generation Time" },
+              { number: "Infinite", label: "Possibilities" }
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="text-4xl md:text-5xl font-bold text-brand-600 mb-2">
+                  {stat.number}
+                </div>
+                <div className="text-gray-600">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Supported Operations */}
+      <section className="py-24 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="bg-gray-900 rounded-3xl p-12 text-white"
+          >
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-6">Supported CAD Operations</h2>
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+                Full parametric modeling capabilities at your fingertips
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { name: "Cube", desc: "Width, height, depth control" },
+                { name: "Cylinder", desc: "Radius and height parameters" },
+                { name: "Sphere", desc: "Radius-based generation" },
+                { name: "Cone", desc: "Radius and height control" },
+                { name: "Torus", desc: "Major and minor radius" },
+                { name: "Sketch", desc: "2D profile creation" },
+                { name: "Extrude", desc: "Sketch to 3D solid" },
+                { name: "Revolve", desc: "Rotational symmetry" },
+                { name: "Fillet", desc: "Edge rounding" },
+                { name: "Chamfer", desc: "Edge beveling" }
+              ].map((op, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  viewport={{ once: true }}
+                  className="bg-white/10 rounded-xl p-4 backdrop-blur-sm"
+                >
+                  <h4 className="font-semibold text-brand-400 mb-1">{op.name}</h4>
+                  <p className="text-sm text-gray-400">{op.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq-section" className="py-20 px-4 bg-white">
+        <div className="container mx-auto max-w-3xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Everything you need to know about Resyft CAD
+            </p>
+          </motion.div>
+
+          <Accordion type="single" collapsible className="w-full">
+            {[
+              {
+                question: "What types of 3D shapes can I create?",
+                answer: "Resyft CAD supports a wide range of primitives including cubes, cylinders, spheres, cones, and tori. You can also create complex shapes using sketch-based operations like extrude and revolve, plus refinement operations like fillet and chamfer."
+              },
+              {
+                question: "How does the AI understand my design intent?",
+                answer: "Our AI is trained on CAD-specific terminology and engineering concepts. It understands dimensions in millimeters, standard CAD operations, and spatial relationships. You can describe shapes naturally, and the AI will generate precise geometry."
+              },
+              {
+                question: "Can I create assemblies with multiple parts?",
+                answer: "Yes! You can create multiple features in a single project. Each shape is added to your feature tree, where you can control visibility, suppression, and locking. The AI can create multiple related shapes in a single conversation."
+              },
+              {
+                question: "What export formats are supported?",
+                answer: "Currently, Resyft CAD supports JSON export of your project data. This includes all feature definitions, positions, rotations, and parameters. More export formats for manufacturing are coming soon."
+              },
+              {
+                question: "How do sketch and extrude operations work?",
+                answer: "First, create a 2D sketch on a plane (XY, XZ, or YZ) using shapes like rectangles, circles, or polygons. Then, extrude that sketch to create a 3D solid. The AI handles both steps and can create complex profiles."
+              },
+              {
+                question: "Is there a limit to project complexity?",
+                answer: "There's no hard limit on the number of features per project. The 3D canvas efficiently renders all visible features, and you can suppress features you're not actively working with to improve performance."
+              }
+            ].map((faq, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+              >
+                <AccordionItem value={`item-${index}`} className="border-b border-gray-200">
+                  <AccordionTrigger className="text-left font-semibold text-gray-900 hover:text-brand-600 py-6 text-lg">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-600 pb-6 leading-relaxed">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              </motion.div>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 px-4 bg-gray-900">
+        <div className="container mx-auto max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Ready to transform your design workflow?
+            </h2>
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Start creating professional 3D models with the power of AI. No complex software to learn - just describe what you want to build.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+              <Link href="/studio">
+                <Button size="lg" className="bg-brand-600 hover:bg-brand-700 text-white h-12 px-8">
+                  Launch CAD Studio
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+            <p className="text-sm text-gray-400">
+              No credit card required • Free to get started
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-black text-white">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="md:col-span-2">
+              <div className="flex items-center space-x-3 mb-6">
+                <Box className="w-10 h-10 text-brand-500" />
+                <span className="text-2xl font-bold text-white">
+                  Resyft CAD
+                </span>
+              </div>
+              <p className="text-gray-400 max-w-md mb-6 leading-relaxed">
+                AI-powered CAD design platform that transforms natural language descriptions into professional 3D models.
+                Design faster, iterate smarter.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-white mb-4">Product</h3>
+              <ul className="space-y-3">
+                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
+                <li><a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors">How It Works</a></li>
+                <li><Link href="/studio" className="text-gray-400 hover:text-white transition-colors">CAD Studio</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-white mb-4">Company</h3>
+              <ul className="space-y-3">
+                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About</Link></li>
+                <li><Link href="/support" className="text-gray-400 hover:text-white transition-colors">Support</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-700 pt-8 mt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <div className="text-gray-400 text-sm">
+                © 2025 Resyft CAD. All rights reserved.
+              </div>
+              <div className="flex items-center space-x-4 mt-4 md:mt-0">
+                <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  AI-Powered CAD
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

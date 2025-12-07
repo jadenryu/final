@@ -47,7 +47,7 @@ export function GuidedTour({ tourId, steps, onComplete, onSkip }: GuidedTourProp
 
   useEffect(() => {
     // Check if tour has been completed
-    const completed = JSON.parse(localStorage.getItem('resyft_completed_tours') || '[]')
+    const completed = JSON.parse(localStorage.getItem('modlr_completed_tours') || '[]')
     setCompletedTours(completed)
 
     if (!completed.includes(tourId)) {
@@ -73,7 +73,7 @@ export function GuidedTour({ tourId, steps, onComplete, onSkip }: GuidedTourProp
 
   const handleComplete = () => {
     const updated = [...completedTours, tourId]
-    localStorage.setItem('resyft_completed_tours', JSON.stringify(updated))
+    localStorage.setItem('modlr_completed_tours', JSON.stringify(updated))
     setCompletedTours(updated)
     setIsActive(false)
     onComplete?.()
@@ -249,7 +249,7 @@ export function HelpTooltip({
 export const DASHBOARD_TOUR: TourStep[] = [
   {
     id: "welcome",
-    title: "Welcome to Resyft!",
+    title: "Welcome to modlr!",
     content: "Let's take a quick tour to help you get started with your research analysis platform.",
     target: "",
     position: "top",
@@ -305,7 +305,7 @@ export const UPLOAD_TOUR: TourStep[] = [
   {
     id: "validation",
     title: "Smart Validation",
-    content: "Resyft automatically validates URLs to ensure they're from trusted academic sources like arXiv, PubMed, Nature, and more.",
+    content: "modlr automatically validates URLs to ensure they're from trusted academic sources like arXiv, PubMed, Nature, and more.",
     target: "",
     position: "top"
   },

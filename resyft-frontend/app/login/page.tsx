@@ -6,7 +6,7 @@ export default function LoginPage() {
       <div className="bg-white relative hidden lg:block">
         <img
           src="/resyft.png"
-          alt="Resyft"
+          alt="modlr"
           className="w-full h-full object-cover"
         />
       </div>
@@ -15,7 +15,7 @@ export default function LoginPage() {
           <a href="/" className="flex items-center gap-2 merriweather-regular">
             <img 
               src="/resyft-2.png" 
-              alt="Resyft Logo" 
+              alt="modlr Logo" 
               className="w-8 h-8 object-contain"
             />
           </a>

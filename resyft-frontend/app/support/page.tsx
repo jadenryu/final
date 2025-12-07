@@ -68,7 +68,7 @@ export default function SupportPage() {
   const commonQuestions = [
     {
       question: 'How accurate is the AI analysis?',
-      answer: 'Resyft achieves 95% accuracy in extracting key research elements. Our AI is specifically trained on academic papers.'
+      answer: 'modlr achieves 95% accuracy in extracting key research elements. Our AI is specifically trained on academic papers.'
     },
     {
       question: 'Can I customize extraction settings?',
@@ -295,7 +295,7 @@ export default function SupportPage() {
                     <Mail className="w-5 h-5 text-blue-600" />
                     <div>
                       <p className="merriweather-regular">Email Support</p>
-                      <p className="text-sm text-gray-600">support@resyft.com</p>
+                      <p className="text-sm text-gray-600">support@modlr.com</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -359,7 +359,7 @@ export default function SupportPage() {
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                   <strong>All Systems Operational</strong><br />
-                  Resyft services are running smoothly with 99.9% uptime.
+                  modlr services are running smoothly with 99.9% uptime.
                 </AlertDescription>
               </Alert>
             </motion.div>

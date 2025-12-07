@@ -23,7 +23,7 @@ export function HeroQuoteSection() {
           
           {/* Quote Text */}
           <blockquote className="text-2xl md:text-3xl lg:text-4xl playfair-semibold leading-tight mb-10 text-gray-800 max-w-3xl mx-auto">
-            "Resyft has revolutionized how we approach literature analysis. What used to take weeks now takes hours, and the insights we discover are deeper than ever before."
+            "modlr has revolutionized how we approach literature analysis. What used to take weeks now takes hours, and the insights we discover are deeper than ever before."
           </blockquote>
           
           {/* Author Info */}

@@ -61,7 +61,7 @@ export function ProjectTutorial({ onComplete, onSkip }: ProjectTutorialProps) {
   const tutorialSteps: TutorialStep[] = [
     {
       id: "welcome",
-      title: "Welcome to Resyft! 👋",
+      title: "Welcome to modlr! 👋",
       description: "Let's take a quick tour of how projects work. This interactive guide will show you all the key features in under 2 minutes.",
       position: "center",
       content: (
@@ -130,7 +130,7 @@ export function ProjectTutorial({ onComplete, onSkip }: ProjectTutorialProps) {
     {
       id: "complete",
       title: "You're All Set! 🎉",
-      description: "Now you know the basics of managing projects in Resyft. Ready to create your real first project?",
+      description: "Now you know the basics of managing projects in modlr. Ready to create your real first project?",
       position: "center",
       content: (
         <div className="text-center space-y-4">

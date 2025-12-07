@@ -43,7 +43,7 @@ export function getExtractionSettings(): ExtractionSettings {
     return getDefaultExtractionSettings()
   }
 
-  const savedSettings = localStorage.getItem('resyft_extraction_settings')
+  const savedSettings = localStorage.getItem('modlr_extraction_settings')
   if (savedSettings) {
     try {
       return JSON.parse(savedSettings)
@@ -97,6 +97,6 @@ export function getDefaultExtractionSettings(): ExtractionSettings {
 
 export function saveExtractionSettings(settings: ExtractionSettings): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('resyft_extraction_settings', JSON.stringify(settings))
+    localStorage.setItem('modlr_extraction_settings', JSON.stringify(settings))
   }
 }

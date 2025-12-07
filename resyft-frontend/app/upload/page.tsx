@@ -59,7 +59,7 @@ export default function UploadPage() {
 
   useEffect(() => {
     // Load existing projects from localStorage
-    const savedProjects = JSON.parse(localStorage.getItem('resyft_projects') || '[]')
+    const savedProjects = JSON.parse(localStorage.getItem('modlr_projects') || '[]')
     setExistingProjects(savedProjects.map((proj: any) => ({
       id: proj.id,
       name: proj.name
@@ -264,7 +264,7 @@ export default function UploadPage() {
       const result = await response.json()
       
       // Store the result in localStorage for later access
-      const savedProjects = JSON.parse(localStorage.getItem('resyft_projects') || '[]')
+      const savedProjects = JSON.parse(localStorage.getItem('modlr_projects') || '[]')
       const paperEntry = {
         id: result.id || `paper_${Date.now()}`,
         title,
@@ -289,12 +289,12 @@ export default function UploadPage() {
           }
           return proj
         })
-        localStorage.setItem('resyft_projects', JSON.stringify(updatedProjects))
+        localStorage.setItem('modlr_projects', JSON.stringify(updatedProjects))
       } else {
         // Store as individual paper
-        const individualPapers = JSON.parse(localStorage.getItem('resyft_individual_papers') || '[]')
+        const individualPapers = JSON.parse(localStorage.getItem('modlr_individual_papers') || '[]')
         individualPapers.push(paperEntry)
-        localStorage.setItem('resyft_individual_papers', JSON.stringify(individualPapers))
+        localStorage.setItem('modlr_individual_papers', JSON.stringify(individualPapers))
       }
       
       setSuccess(true)

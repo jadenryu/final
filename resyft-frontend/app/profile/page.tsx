@@ -85,7 +85,7 @@ export default function ProfilePage() {
   useEffect(() => {
     // Load user profile from localStorage
     const loadProfile = () => {
-      const preferences = JSON.parse(localStorage.getItem('resyft_preferences') || '{}')
+      const preferences = JSON.parse(localStorage.getItem('modlr_preferences') || '{}')
       const mockProfile: UserProfile = {
         id: "user-1",
         name: "Dr. Sarah Johnson",
@@ -150,7 +150,7 @@ export default function ProfilePage() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Save preferences to localStorage
-      localStorage.setItem('resyft_preferences', JSON.stringify({
+      localStorage.setItem('modlr_preferences', JSON.stringify({
         summary_depth: profile.preferences.summaryDepth,
         statistical_preference: profile.preferences.statisticalPreference,
         quote_density: profile.preferences.quoteDensity,
@@ -686,7 +686,7 @@ export default function ProfilePage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label className="text-sm merriweather-regular">Share Analytics</Label>
-                          <p className="text-xs text-gray-600">Help improve Resyft with anonymous usage data</p>
+                          <p className="text-xs text-gray-600">Help improve modlr with anonymous usage data</p>
                         </div>
                         <Switch
                           checked={profile.privacy.shareAnalytics}

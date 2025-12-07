@@ -3,7 +3,7 @@ import Image from "next/image"
 const testimonials = [
   {
     quote:
-      "Resyft CAD transformed how I prototype. I described a complex bracket assembly in plain English and had a manufacturable model in under a minute.",
+      "modlr transformed how I prototype. I described a complex bracket assembly in plain English and had a manufacturable model in under a minute.",
     name: "Michael Chen",
     company: "Tesla Engineering",
     avatar: "/placeholder.svg",
@@ -35,7 +35,7 @@ const testimonials = [
   },
   {
     quote:
-      "Resyft CAD understands engineering terminology perfectly. Fillets, chamfers, revolves—it handles complex operations effortlessly.",
+      "modlr understands engineering terminology perfectly. Fillets, chamfers, revolves—it handles complex operations effortlessly.",
     name: "David Kim",
     company: "SpaceX Structures",
     avatar: "/placeholder.svg",
@@ -51,7 +51,7 @@ const testimonials = [
   },
   {
     quote:
-      "From concept to exportable model, Resyft streamlines the entire CAD workflow. It's become essential to our rapid prototyping process.",
+      "From concept to exportable model, modlr streamlines the entire CAD workflow. It's become essential to our rapid prototyping process.",
     name: "Prof. Robert Adams",
     company: "Stanford Design School",
     avatar: "/placeholder.svg",
@@ -136,7 +136,7 @@ export function TestimonialGridSection() {
             Trusted by researchers worldwide
           </h2>
           <p className="self-stretch text-center text-slate-600 text-lg md:text-lg lg:text-xl merriweather-light leading-relaxed max-w-4xl mx-auto">
-            {"Real feedback from researchers using Resyft to accelerate their work"} <br />{" "}
+            {"Real feedback from researchers using modlr to accelerate their work"} <br />{" "}
             {"and discover insights faster than ever before"}
           </p>
         </div>

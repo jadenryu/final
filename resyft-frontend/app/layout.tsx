@@ -11,7 +11,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CAD Designer - AI-Powered Generative CAD",
+  title: "modlr - AI-Powered Generative CAD",
   description: "Create 3D CAD designs with AI assistance",
   icons: {
     icon: [

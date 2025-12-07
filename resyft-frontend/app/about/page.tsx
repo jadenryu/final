@@ -36,7 +36,7 @@ export default function AboutPage() {
           >
             <Box className="w-8 h-8 text-brand-600" />
             <span className="text-xl font-semibold text-gray-900">
-              Resyft CAD
+              modlr
             </span>
           </motion.div>
 
@@ -96,7 +96,7 @@ export default function AboutPage() {
               <span className="text-brand-600">Natural Language</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
-              Resyft CAD is an AI-powered 3D modeling platform that transforms your ideas into professional CAD designs.
+              modlr is an AI-powered 3D modeling platform that transforms your ideas into professional CAD designs.
               Simply describe what you want to create, and watch as your vision comes to life in real-time.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -341,7 +341,7 @@ export default function AboutPage() {
               Frequently Asked Questions
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Everything you need to know about Resyft CAD
+              Everything you need to know about modlr
             </p>
           </motion.div>
 
@@ -349,7 +349,7 @@ export default function AboutPage() {
             {[
               {
                 question: "What types of 3D shapes can I create?",
-                answer: "Resyft CAD supports a wide range of primitives including cubes, cylinders, spheres, cones, and tori. You can also create complex shapes using sketch-based operations like extrude and revolve, plus refinement operations like fillet and chamfer."
+                answer: "modlr supports a wide range of primitives including cubes, cylinders, spheres, cones, and tori. You can also create complex shapes using sketch-based operations like extrude and revolve, plus refinement operations like fillet and chamfer."
               },
               {
                 question: "How does the AI understand my design intent?",
@@ -361,7 +361,7 @@ export default function AboutPage() {
               },
               {
                 question: "What export formats are supported?",
-                answer: "Currently, Resyft CAD supports JSON export of your project data. This includes all feature definitions, positions, rotations, and parameters. More export formats for manufacturing are coming soon."
+                answer: "Currently, modlr supports JSON export of your project data. This includes all feature definitions, positions, rotations, and parameters. More export formats for manufacturing are coming soon."
               },
               {
                 question: "How do sketch and extrude operations work?",
@@ -430,7 +430,7 @@ export default function AboutPage() {
               <div className="flex items-center space-x-3 mb-6">
                 <Box className="w-10 h-10 text-brand-500" />
                 <span className="text-2xl font-bold text-white">
-                  Resyft CAD
+                  modlr
                 </span>
               </div>
               <p className="text-gray-400 max-w-md mb-6 leading-relaxed">
@@ -460,7 +460,7 @@ export default function AboutPage() {
           <div className="border-t border-gray-700 pt-8 mt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-400 text-sm">
-                © 2025 Resyft CAD. All rights reserved.
+                © 2025 modlr. All rights reserved.
               </div>
               <div className="flex items-center space-x-4 mt-4 md:mt-0">
                 <Badge variant="secondary" className="bg-white/10 text-white border-white/20">

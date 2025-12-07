@@ -99,7 +99,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <img 
                     src="/resyft-2.png" 
-                    alt="Resyft" 
+                    alt="modlr" 
                     className="size-6 object-contain" 
                   />
                 </div>

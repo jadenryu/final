@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const loadSettings = () => {
-      const savedSettings = localStorage.getItem('resyft_document_settings')
+      const savedSettings = localStorage.getItem('modlr_document_settings')
       const defaultSettings: DocumentSettings = {
         processing: {
           extractKeyPoints: true,
@@ -102,7 +102,7 @@ export default function SettingsPage() {
 
     setSaving(true)
     try {
-      localStorage.setItem('resyft_document_settings', JSON.stringify(settings))
+      localStorage.setItem('modlr_document_settings', JSON.stringify(settings))
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (error) {

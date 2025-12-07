@@ -53,7 +53,7 @@ export function NavTabs() {
 
   useEffect(() => {
     // Load saved tabs from localStorage
-    const savedTabs = localStorage.getItem("resyft_nav_tabs")
+    const savedTabs = localStorage.getItem("modlr_nav_tabs")
     if (savedTabs) {
       try {
         const parsed = JSON.parse(savedTabs)
@@ -92,7 +92,7 @@ export function NavTabs() {
       href: tab.href,
       closable: tab.closable
     }))
-    localStorage.setItem("resyft_nav_tabs", JSON.stringify(serializableTabs))
+    localStorage.setItem("modlr_nav_tabs", JSON.stringify(serializableTabs))
   }, [tabs])
 
   const addTab = (href: string, label: string, icon: React.ReactNode) => {
@@ -136,7 +136,7 @@ export function NavTabs() {
           <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
             <span className="text-primary-foreground text-xs playfair-bold">R</span>
           </div>
-          <span className="playfair-semibold text-sm">Resyft</span>
+          <span className="playfair-semibold text-sm">modlr</span>
         </div>
 
         {/* Tabs */}

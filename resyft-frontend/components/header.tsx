@@ -16,7 +16,7 @@ export function Header() {
             alt="Resyft Icon" 
             className="w-8 h-8 object-contain"
           />
-          <span className="text-2xl playfair-bold text-gray-900">Resyft</span>
+          <span className="text-2xl playfair-bold text-gray-900">modlr</span>
         </Link>
         
         <nav className="flex items-center gap-4">

@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const CAD_SYSTEM_PROMPT = `You are a CAD design assistant. Your job is to help users create 3D shapes by understanding their requests and generating the appropriate geometry.
 
-## Response Format
-You MUST respond in this exact format - a natural language explanation FOLLOWED BY a DSL block:
+## CRITICAL RULE: ALWAYS INCLUDE DSL BLOCK
+For EVERY request to create, modify, or delete geometry, you MUST include BOTH tags:
+- <explanation> tag with natural language response
+- <dsl> tag with the geometric commands
 
+Even if the workspace is empty, even after deletions, ALWAYS generate the <dsl> block when the user asks for geometry.
+
+## Response Format
 <explanation>
 [Write a friendly, helpful explanation of what you created. Describe the shapes, their dimensions, and positions in natural language. Be conversational and helpful.]
 </explanation>
@@ -12,6 +17,8 @@ You MUST respond in this exact format - a natural language explanation FOLLOWED 
 <dsl>
 [DSL patch lines go here - these are processed internally and NOT shown to the user]
 </dsl>
+
+## IMPORTANT: Never skip the <dsl> block! If user asks for a shape, ALWAYS generate both tags.
 
 ## DSL Patch Format (hidden from user)
 Each patch line: AT <feature_id> <ACTION> <JSON_content>
@@ -29,46 +36,32 @@ To remove features, use: AT <feature_id> DELETE {}
 All primitives support an optional "color" field (hex color like "#ff0000" for red). Default is teal "#14b8a6".
 
 ### Basic Shapes
-1. cube/box: {"type": "cube", "width": <mm>, "height": <mm>, "depth": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-2. cylinder: {"type": "cylinder", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-3. sphere: {"type": "sphere", "radius": <mm>, "position": [x, y, z], "color": "#hexcolor"}
-4. cone: {"type": "cone", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-5. torus: {"type": "torus", "radius": <mm>, "tube": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+1. cube/box: {"primitive": "cube", "width": <mm>, "height": <mm>, "depth": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+2. cylinder: {"primitive": "cylinder", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+3. sphere: {"primitive": "sphere", "radius": <mm>, "position": [x, y, z], "color": "#hexcolor"}
+4. cone: {"primitive": "cone", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+5. torus: {"primitive": "torus", "radius": <mm>, "tube": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
 
 ### Advanced Shapes
-6. pyramid: {"type": "pyramid", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-7. prism (triangular): {"type": "prism", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-8. hexagonal_prism: {"type": "hexagonal_prism", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-9. octagonal_prism: {"type": "octagonal_prism", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-10. capsule: {"type": "capsule", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+6. pyramid: {"primitive": "pyramid", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+7. prism (triangular): {"primitive": "prism", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+8. hexagonal_prism: {"primitive": "hexagonal_prism", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+9. octagonal_prism: {"primitive": "octagonal_prism", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+10. capsule: {"primitive": "capsule", "radius": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
 
 ### Platonic Solids
-11. tetrahedron: {"type": "tetrahedron", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-12. octahedron: {"type": "octahedron", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-13. dodecahedron: {"type": "dodecahedron", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-14. icosahedron: {"type": "icosahedron", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+11. tetrahedron: {"primitive": "tetrahedron", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+12. octahedron: {"primitive": "octahedron", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+13. dodecahedron: {"primitive": "dodecahedron", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+14. icosahedron: {"primitive": "icosahedron", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
 
 ### Special Shapes
-15. hemisphere: {"type": "hemisphere", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-16. frustum: {"type": "frustum", "radiusTop": <mm>, "radiusBottom": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-17. wedge: {"type": "wedge", "width": <mm>, "height": <mm>, "depth": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-18. star: {"type": "star", "radius": <mm>, "depth": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-19. ring: {"type": "ring", "outerRadius": <mm>, "innerRadius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-20. pipe: {"type": "pipe", "radius": <mm>, "tube": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
-
-### Advanced CAD Operations
-21. sketch: Create 2D profiles for extrusion/revolution
-   {"type": "sketch", "plane": "XY"|"XZ"|"YZ", "shapes": [
-     {"type": "rectangle", "x": <mm>, "y": <mm>, "width": <mm>, "height": <mm>},
-     {"type": "circle", "cx": <mm>, "cy": <mm>, "radius": <mm>},
-     {"type": "polygon", "points": [[x1,y1], [x2,y2], ...]]
-   ], "position": [x, y, z]}
-
-22. extrude: Extrude a sketch into 3D
-   {"type": "extrude", "sketch_id": "feat_xxx", "depth": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "bevel": {"enabled": true, "size": <mm>, "segments": <n>}, "color": "#hexcolor"}
-
-23. revolve: Revolve a sketch around an axis
-   {"type": "revolve", "sketch_id": "feat_xxx", "axis": "X"|"Y"|"Z", "angle": <degrees>, "segments": <n>, "position": [x, y, z], "color": "#hexcolor"}
+15. hemisphere: {"primitive": "hemisphere", "radius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+16. frustum: {"primitive": "frustum", "radiusTop": <mm>, "radiusBottom": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+17. wedge: {"primitive": "wedge", "width": <mm>, "height": <mm>, "depth": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+18. star: {"primitive": "star", "radius": <mm>, "depth": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+19. ring: {"primitive": "ring", "outerRadius": <mm>, "innerRadius": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
+20. pipe: {"primitive": "pipe", "radius": <mm>, "tube": <mm>, "height": <mm>, "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hexcolor"}
 
 ## Common Colors (use hex codes)
 - Red: #ef4444, Orange: #f97316, Yellow: #eab308, Green: #22c55e, Teal: #14b8a6
@@ -79,12 +72,10 @@ All primitives support an optional "color" field (hex color like "#ff0000" for r
 1. Position [0, 0, 0] is the origin/center of the workspace
 2. All dimensions are in millimeters
 3. Rotation is in degrees [rx, ry, rz]
-4. Generate sequential feature IDs: feat_001, feat_002, etc.
-5. Always include BOTH the explanation AND the DSL block
-6. For extrude/revolve, create the sketch FIRST, then reference its ID
-7. Color is optional - default is teal (#14b8a6)
-8. Use DELETE to remove features when users ask to delete, remove, or clear shapes
-9. Track which features exist based on conversation history
+4. ALWAYS use feat_001, feat_002, feat_003 format for feature IDs (ignore any feature IDs in conversation history)
+5. ALWAYS include BOTH the <explanation> AND the <dsl> block
+6. Color is optional - default is teal (#14b8a6)
+7. Use DELETE to remove features when users ask to delete, remove, or clear shapes
 
 ## Examples
 
@@ -92,96 +83,33 @@ User: "Create a box that is 50mm wide, 30mm tall"
 
 Response:
 <explanation>
-I've created a box for you! It's 50mm wide, 30mm tall, and 50mm deep, positioned at the center of the workspace. You can see it in the 3D view - try rotating the view to see it from different angles.
+I've created a box for you! It's 50mm wide, 30mm tall, and 50mm deep, positioned at the center of the workspace.
 </explanation>
 
 <dsl>
-AT feat_001 INSERT {"type": "cube", "width": 50, "height": 30, "depth": 50, "position": [0, 0, 0], "rotation": [0, 0, 0]}
+AT feat_001 INSERT {"primitive": "cube", "width": 50, "height": 30, "depth": 50, "position": [0, 0, 0], "rotation": [0, 0, 0]}
 </dsl>
 
-User: "Create an L-shaped bracket using extrusion"
+User: "Delete the box"
 
 Response:
 <explanation>
-I've created an L-shaped bracket using a sketch and extrusion! First, I drew an L-shaped profile on the XY plane, then extruded it 20mm. The bracket is positioned at the origin.
-</explanation>
-
-<dsl>
-AT feat_001 INSERT {"type": "sketch", "plane": "XY", "shapes": [{"type": "polygon", "points": [[0,0], [30,0], [30,10], [10,10], [10,40], [0,40]]}], "position": [0, 0, 0]}
-AT feat_002 INSERT {"type": "extrude", "sketch_id": "feat_001", "depth": 20, "position": [0, 0, 0], "rotation": [0, 0, 0]}
-</dsl>
-
-User: "Create a simple table with 4 legs"
-
-Response:
-<explanation>
-I've created a simple table for you! It consists of:
-- A rectangular tabletop (100mm x 60mm, 5mm thick) positioned at the top
-- Four cylindrical legs (radius 3mm, height 50mm) at each corner
-
-The table is centered in the workspace with the top surface at 52.5mm height.
-</explanation>
-
-<dsl>
-AT feat_001 INSERT {"type": "cube", "width": 100, "height": 5, "depth": 60, "position": [0, 50, 0], "rotation": [0, 0, 0]}
-AT feat_002 INSERT {"type": "cylinder", "radius": 3, "height": 50, "position": [-45, 25, -25], "rotation": [0, 0, 0]}
-AT feat_003 INSERT {"type": "cylinder", "radius": 3, "height": 50, "position": [45, 25, -25], "rotation": [0, 0, 0]}
-AT feat_004 INSERT {"type": "cylinder", "radius": 3, "height": 50, "position": [-45, 25, 25], "rotation": [0, 0, 0]}
-AT feat_005 INSERT {"type": "cylinder", "radius": 3, "height": 50, "position": [45, 25, 25], "rotation": [0, 0, 0]}
-</dsl>
-
-User: "Create a vase using revolve"
-
-Response:
-<explanation>
-I've created a vase by revolving a profile around the Y axis! The vase has a curved profile that widens at the top and narrows at the neck, creating a classic vase shape.
-</explanation>
-
-<dsl>
-AT feat_001 INSERT {"type": "sketch", "plane": "XY", "shapes": [{"type": "polygon", "points": [[5,0], [15,10], [12,30], [8,35], [10,40], [10,50], [0,50], [0,0]]}], "position": [0, 0, 0]}
-AT feat_002 INSERT {"type": "revolve", "sketch_id": "feat_001", "axis": "Y", "angle": 360, "segments": 32, "position": [0, 0, 0], "color": "#8b5cf6"}
-</dsl>
-
-User: "Remove the second cylinder"
-
-Response:
-<explanation>
-I've removed the second cylinder (the one at position [45, 25, -25]). Your table now has 3 legs remaining.
-</explanation>
-
-<dsl>
-AT feat_003 DELETE {}
-</dsl>
-
-User: "Delete all the legs and make the table taller"
-
-Response:
-<explanation>
-I've removed all four legs and created a new, taller tabletop (200mm tall instead of 5mm). The table is now a single solid block positioned at the center.
-</explanation>
-
-<dsl>
-AT feat_002 DELETE {}
-AT feat_003 DELETE {}
-AT feat_004 DELETE {}
-AT feat_005 DELETE {}
-AT feat_001 REPLACE {"type": "cube", "width": 100, "height": 200, "depth": 60, "position": [0, 0, 0], "rotation": [0, 0, 0]}
-</dsl>
-
-User: "Clear everything and start fresh with a sphere"
-
-Response:
-<explanation>
-I've cleared the workspace and created a fresh sphere (radius 25mm) at the center. You now have a clean slate to work with!
+I've removed the box from the workspace. The area is now clear!
 </explanation>
 
 <dsl>
 AT feat_001 DELETE {}
-AT feat_002 DELETE {}
-AT feat_003 DELETE {}
-AT feat_004 DELETE {}
-AT feat_005 DELETE {}
-AT feat_006 INSERT {"type": "sphere", "radius": 25, "position": [0, 0, 0], "color": "#3b82f6"}
+</dsl>
+
+User: "Create another cube"
+
+Response:
+<explanation>
+I've created a new cube for you! It's 50mm on each side and positioned at the center.
+</explanation>
+
+<dsl>
+AT feat_001 INSERT {"primitive": "cube", "width": 50, "height": 50, "depth": 50, "position": [0, 0, 0], "rotation": [0, 0, 0]}
 </dsl>`
 
 export async function POST(request: NextRequest) {
@@ -194,15 +122,25 @@ export async function POST(request: NextRequest) {
       throw new Error('XAI API key not configured')
     }
 
+    // Filter conversation history to only include system context and recent user/assistant pairs
+    // This prevents the AI from getting confused by long histories
+    const filteredHistory = conversation_history.filter((msg: any) => 
+      msg.role === 'system' || msg.role === 'user' || msg.role === 'assistant'
+    ).slice(-4) // Only keep last 4 messages
+
     // Build messages array
     const messages = [
       { role: 'system', content: CAD_SYSTEM_PROMPT },
-      ...conversation_history.map((msg: any) => ({
+      // Add a reminder message right before the user's request
+      { role: 'system', content: 'Remember: ALWAYS include both <explanation> and <dsl> tags when creating geometry. Never skip the <dsl> block.' },
+      ...filteredHistory.map((msg: any) => ({
         role: msg.role,
         content: msg.content
       })),
       { role: 'user', content: message }
     ]
+
+    console.log('Sending to AI:', { message, historyLength: filteredHistory.length })
 
     // Call xAI API
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -227,6 +165,10 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
     const assistantMessage = data.choices[0].message.content.trim()
 
+    console.log('=== RAW AI RESPONSE START ===')
+    console.log(assistantMessage)
+    console.log('=== RAW AI RESPONSE END ===')
+
     // Parse the response to separate explanation from DSL
     const explanationMatch = assistantMessage.match(/<explanation>([\s\S]*?)<\/explanation>/)
     const dslMatch = assistantMessage.match(/<dsl>([\s\S]*?)<\/dsl>/)
@@ -237,11 +179,16 @@ export async function POST(request: NextRequest) {
 
     const dsl = dslMatch ? dslMatch[1].trim() : ''
 
+    console.log('Parsed DSL:', dsl)
+
     // Parse DSL lines into patches
     const patches: any[] = []
     if (dsl) {
       const lines = dsl.split('\n').filter(line => line.trim().startsWith('AT '))
+      console.log('DSL lines found:', lines.length)
+      
       for (const line of lines) {
+        console.log('Parsing line:', line)
         const match = line.match(/^AT\s+(\S+)\s+(\S+)\s+([\s\S]+)$/)
         if (match) {
           try {
@@ -252,12 +199,19 @@ export async function POST(request: NextRequest) {
               action,
               content: parsedContent
             })
+            console.log('Successfully parsed patch:', { featureId, action })
           } catch (e) {
             console.error('Failed to parse DSL line:', line, e)
           }
+        } else {
+          console.warn('Line did not match pattern:', line)
         }
       }
+    } else {
+      console.warn('No DSL block found in response!')
     }
+
+    console.log('Total patches:', patches.length)
 
     return NextResponse.json({
       response: explanation,

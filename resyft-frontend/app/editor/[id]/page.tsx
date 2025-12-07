@@ -685,48 +685,87 @@ export default function EditorPage() {
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || editor.isGenerating) return
-
+  
     const userMessage = chatInput.trim()
     setChatInput("")
     setLocalMessages(prev => [...prev, { role: 'user', content: userMessage }])
     setIsGenerating(true)
-
+  
     try {
+      // Build a context message about current features for the AI
+      const currentFeatureIds = project?.features.map(f => f.id) || []
+      const contextMessage = currentFeatureIds.length > 0 
+        ? `Current features in scene: ${currentFeatureIds.join(', ')}`
+        : 'Scene is empty - no features exist yet.'
+  
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          conversation_history: localMessages.map(m => ({
-            role: m.role,
-            content: m.content
-          }))
+          conversation_history: [
+            // Only include user/assistant messages, not system messages
+            ...localMessages.filter(m => m.role !== 'system').slice(-4).map(m => ({
+              role: m.role,
+              content: m.content
+            }))
+          ]
         })
       })
-
+  
       const data = await response.json()
-
+  
+      console.log('API Response:', data) // DEBUG: Check what we're getting back
+  
       if (data.error) {
         setLocalMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.details || data.error}` }])
       } else {
         // Add the natural language response to chat
         setLocalMessages(prev => [...prev, { role: 'assistant', content: data.response }])
-
+  
+        console.log('Patches received:', data.patches) // DEBUG: Check patches
+  
         // Process patches from the API response
         if (data.patches && data.patches.length > 0 && project) {
-          let counter = featureCounter
-          data.patches.forEach((patch: any) => {
-            const featureId = patch.feature_id || `feat_${String(counter).padStart(3, '0')}`
-            
-            // Handle different patch actions
+          // First pass: handle all DELETEs
+          const deletions = data.patches.filter((p: any) => p.action === 'DELETE')
+          const nonDeletions = data.patches.filter((p: any) => p.action !== 'DELETE')
+          
+          console.log('Processing deletions:', deletions.length)
+          deletions.forEach((patch: any) => {
+            console.log('Deleting feature:', patch.feature_id)
+            deleteFeature(projectId, patch.feature_id)
+          })
+  
+          // Get fresh project state after deletions
+          const currentProject = projects.find(p => p.id === projectId)
+          if (!currentProject) return
+  
+          // Calculate counter based on current state AFTER deletions
+          const existingIds = currentProject.features.map(f => {
+            const match = f.id.match(/feat_(\d+)/)
+            return match ? parseInt(match[1]) : 0
+          })
+          const maxExistingId = existingIds.length > 0 ? Math.max(...existingIds) : 0
+          let counter = Math.max(featureCounter, maxExistingId + 1)
+  
+          console.log('Starting counter:', counter, 'Max existing ID:', maxExistingId, 'Current features:', currentProject.features.length)
+  
+          // Second pass: handle INSERTs and REPLACEs
+          nonDeletions.forEach((patch: any, index: number) => {
+            console.log(`Processing patch ${index}:`, patch) // DEBUG
+  
             if (patch.action === 'DELETE') {
-              // Delete the feature
-              deleteFeature(projectId, featureId)
+              console.log('Deleting feature:', patch.feature_id)
+              deleteFeature(projectId, patch.feature_id)
             } else if (patch.action === 'INSERT') {
-              // Create new feature
+              // Generate a unique feature ID
+              let featureId = `feat_${String(counter).padStart(3, '0')}`
+              console.log('Inserting feature:', featureId, 'with content:', patch.content)
+              
               const feature: Feature = {
                 id: featureId,
-                name: `${patch.content.type || 'Shape'} ${featureId.split('_')[1] || ''}`,
+                name: `${patch.content.primitive || 'Shape'} ${featureId.split('_')[1] || ''}`,
                 type: 'primitive',
                 visible: true,
                 locked: false,
@@ -740,35 +779,46 @@ export default function EditorPage() {
               addFeature(projectId, feature)
               counter++
             } else if (patch.action === 'REPLACE') {
-              // Update existing feature
+              const featureId = patch.feature_id
+              const existingFeature = project.features.find(f => f.id === featureId)
+              
+              console.log('Replacing feature:', featureId, 'exists:', !!existingFeature)
+              
+              if (existingFeature) {
+                deleteFeature(projectId, featureId)
+              }
+              
               const feature: Feature = {
                 id: featureId,
-                name: `${patch.content.type || 'Shape'} ${featureId.split('_')[1] || ''}`,
+                name: `${patch.content.primitive || 'Shape'} ${featureId.split('_')[1] || ''}`,
                 type: 'primitive',
                 visible: true,
                 locked: false,
                 suppressed: false,
                 patch: {
                   feature_id: featureId,
-                  action: 'REPLACE',
+                  action: 'INSERT',
                   content: patch.content
                 }
               }
-              // Delete old and add new (effectively replacing)
-              deleteFeature(projectId, featureId)
               addFeature(projectId, feature)
             }
           })
+          
+          console.log('Final counter:', counter) // DEBUG
           setFeatureCounter(counter)
+        } else {
+          console.log('No patches to process') // DEBUG
         }
       }
     } catch (error) {
+      console.error('Chat error:', error) // DEBUG
       setLocalMessages(prev => [...prev, { role: 'assistant', content: 'Failed to connect to AI service. Please try again.' }])
     } finally {
       setIsGenerating(false)
     }
   }
-
+  
   if (!project) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">

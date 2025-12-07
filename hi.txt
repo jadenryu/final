@@ -1,1 +1,134 @@
-dsfadfsdaf
+dsfadfsdafAT <feature_id> <ACTION> <JSON_content>
+
+
+- `feature_id`: unique identifier for a shape or feature
+- `ACTION`: INSERT | REPLACE | DELETE
+- `JSON_content`: JSON object describing the primitive/feature
+
+---
+
+## Example DSL File
+
+
+
+AT cube_01 INSERT {"primitive":"cube","dimensions":[50,20,30],"position":[0,0,0]}
+AT sketch_01 INSERT {"primitive":"sketch","plane":"XY","shapes":[{"type":"rectangle","x":0,"y":0,"width":20,"height":10}]}
+AT extrude_01 INSERT {"primitive":"extrude","sketch_id":"sketch_01","depth":10}
+AT fillet_01 INSERT {"primitive":"fillet","edges":["e1","e2"],"radius":2}
+AT revolve_01 INSERT {"primitive":"revolve","sketch_id":"sketch_01","segments":32,"axis":"Y"}
+
+
+---
+
+## Patch Actions
+
+- **INSERT**: Add a new primitive/feature
+- **REPLACE**: Modify an existing feature (by feature_id)
+- **DELETE**: Remove a feature (by feature_id)
+
+---
+
+## Primitives & Expected Fields
+
+### Cube
+
+
+{
+"primitive": "cube",
+"dimensions": [width, height, depth],
+"position": [x, y, z],
+"rotation": [rx, ry, rz], // optional
+"color": "#RRGGBB", // optional
+"metadata": {} // edges, faces, feature history
+}
+
+
+### Cylinder
+
+
+{
+"primitive": "cylinder",
+"radiusTop": number,
+"radiusBottom": number,
+"height": number,
+"position": [x, y, z],
+"rotation": [rx, ry, rz], // optional
+"radialSegments": number, // optional, default 32
+"color": "#RRGGBB", // optional
+"metadata": {}
+}
+
+
+### Sketch
+
+
+{
+"primitive": "sketch",
+"plane": "XY" | "XZ" | "YZ",
+"shapes": [
+{"type":"rectangle","x":0,"y":0,"width":20,"height":10},
+{"type":"circle","cx":10,"cy":10,"radius":5},
+{"type":"polygon","points":[[0,0],[10,0],[5,5]]}
+],
+"position": [x, y, z], // optional
+"metadata": {}
+}
+
+
+### Extrude
+
+
+{
+"primitive": "extrude",
+"sketch_id": "sketch_01",
+"depth": number,
+"direction": [dx, dy, dz], // optional
+"bevel": {"enabled":true/false,"size":number,"segments":number},
+"metadata": {}
+}
+
+
+### Revolve
+
+
+{
+"primitive": "revolve",
+"sketch_id": "sketch_01",
+"axis": "X" | "Y" | "Z" | [dx, dy, dz],
+"segments": number,
+"angle": number, // optional, default 360
+"metadata": {}
+}
+
+
+### Fillet
+
+
+{
+"primitive": "fillet",
+"edges": ["edge_01","edge_02", ...],
+"radius": number,
+"metadata": {}
+}
+
+
+### Chamfer
+
+
+{
+"primitive": "chamfer",
+"edges": ["edge_01","edge_02", ...],
+"distance": number,
+"metadata": {}
+}
+
+
+---
+
+## Notes
+
+- All primitives must have a **unique feature_id**.
+- `metadata` is optional but recommended for storing edges, faces, and feature history.
+- Positions are local coordinates, relative to world origin or parent feature.
+- Patch actions are deterministic and allow incremental AI reasoning.
+- LLMs can combine primitives and features creatively; this minimal DSL is enough f

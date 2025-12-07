@@ -1,0 +1,72 @@
+1️⃣ Core Purpose
+
+The app is a generative CAD environment powered by an LLM:
+
+Users (or prompts) describe what they want to design in natural language
+
+The AI generates incremental edits to a structured CAD DSL
+
+The system applies, validates, and visualizes those edits in 3D (Three.js)
+
+The result: a working 3D model, fully parametric and feature-aware, without the user manually designing every part
+
+2️⃣ Why This is Valuable
+
+Rapid prototyping: You can go from concept → 3D model in seconds
+
+AI-assisted design: LLM handles creativity, combinations, and repetitive tasks
+
+Incremental and explainable: Each patch/action is tracked (INSERT/REPLACE/DELETE), so the system can show “why” a shape exists
+
+Hackathon-ready: MVP can run entirely in the browser or an Electron app
+
+Composable DSL: Even minimal primitives (cube, cylinder, sketch, extrude, fillet, chamfer, revolve) can generate complex designs when combined by AI
+
+3️⃣ How It Works (High-Level Flow)
+User / Prompt
+      ↓
+LLM generates patch (AT <feature_id> <ACTION> <JSON>)
+      ↓
+DSL Interpreter applies patch
+      ↓
+Compiler/Validator checks constraints & geometry
+      ↓
+If errors → feed back to LLM
+Else → Render updated 3D model in Three.js
+      ↓
+Repeat until no errors or max iterations
+
+
+DSL: the “code” representing the design, with all primitives, features, and metadata
+
+Patch system: allows incremental edits (like git for CAD)
+
+Renderer: visualizes the 3D model with edges, faces, and features
+
+LLM: thinks in terms of high-level design intent rather than raw vertices
+
+4️⃣ What Users / LLM Can Do
+
+Generate entirely new shapes from natural language
+
+Add features to existing shapes (fillets, chamfers, extrudes)
+
+Modify dimensions or orientations of primitives
+
+Compose sketches, extrudes, revolutions to create complex objects
+
+AI can get creative and generate novel combinations while respecting the DSL rules
+
+5️⃣ Why This Approach is Hackathon-Friendly
+
+Minimal backend requirements: mostly JSON parsing + Three.js rendering
+
+Highly modular: primitives + features + patch system → can expand incrementally
+
+Explainable edits: every feature has a feature_id → easy to track AI reasoning
+
+Immediate visual feedback: shows judges / users the AI’s iterative design decisions
+
+6️⃣ TL;DR (The App in One Sentence)
+
+A web-based AI-CAD system where an LLM incrementally generates, modifies, and validates 3D designs through a structured, feature-aware DSL, producing creative parametric models with full visualization.

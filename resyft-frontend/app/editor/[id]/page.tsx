@@ -639,6 +639,7 @@ export default function EditorPage() {
     setSelectedFeatures,
     setViewMode,
     addFeature,
+    deleteFeature,
     setIsGenerating,
     updateProject,
     exportProject,
@@ -716,22 +717,47 @@ export default function EditorPage() {
           let counter = featureCounter
           data.patches.forEach((patch: any) => {
             const featureId = patch.feature_id || `feat_${String(counter).padStart(3, '0')}`
-            counter++
-
-            const feature: Feature = {
-              id: featureId,
-              name: `${patch.content.type || 'Shape'} ${featureId.split('_')[1] || ''}`,
-              type: 'primitive',
-              visible: true,
-              locked: false,
-              suppressed: false,
-              patch: {
-                feature_id: featureId,
-                action: patch.action as 'INSERT' | 'REPLACE' | 'DELETE',
-                content: patch.content
+            
+            // Handle different patch actions
+            if (patch.action === 'DELETE') {
+              // Delete the feature
+              deleteFeature(projectId, featureId)
+            } else if (patch.action === 'INSERT') {
+              // Create new feature
+              const feature: Feature = {
+                id: featureId,
+                name: `${patch.content.type || 'Shape'} ${featureId.split('_')[1] || ''}`,
+                type: 'primitive',
+                visible: true,
+                locked: false,
+                suppressed: false,
+                patch: {
+                  feature_id: featureId,
+                  action: 'INSERT',
+                  content: patch.content
+                }
               }
+              addFeature(projectId, feature)
+              counter++
+            } else if (patch.action === 'REPLACE') {
+              // Update existing feature
+              const feature: Feature = {
+                id: featureId,
+                name: `${patch.content.type || 'Shape'} ${featureId.split('_')[1] || ''}`,
+                type: 'primitive',
+                visible: true,
+                locked: false,
+                suppressed: false,
+                patch: {
+                  feature_id: featureId,
+                  action: 'REPLACE',
+                  content: patch.content
+                }
+              }
+              // Delete old and add new (effectively replacing)
+              deleteFeature(projectId, featureId)
+              addFeature(projectId, feature)
             }
-            addFeature(projectId, feature)
           })
           setFeatureCounter(counter)
         }

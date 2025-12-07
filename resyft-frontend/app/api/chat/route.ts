@@ -16,8 +16,14 @@ You MUST respond in this exact format - a natural language explanation FOLLOWED 
 ## DSL Patch Format (hidden from user)
 Each patch line: AT <feature_id> <ACTION> <JSON_content>
 - feature_id: Unique ID like "feat_001", "feat_002", etc.
-- ACTION: INSERT, REPLACE, or DELETE
-- JSON_content: Single-line JSON describing the shape
+- ACTION: INSERT (create new), REPLACE (modify existing), or DELETE (remove existing)
+- JSON_content: Single-line JSON describing the shape (empty {} for DELETE)
+
+## DELETE Action
+To remove features, use: AT <feature_id> DELETE {}
+- You can delete multiple features in one response
+- Reference features by their IDs from conversation history
+- After deletion, remember the feature no longer exists
 
 ## Supported Primitives
 All primitives support an optional "color" field (hex color like "#ff0000" for red). Default is teal "#14b8a6".
@@ -55,7 +61,7 @@ All primitives support an optional "color" field (hex color like "#ff0000" for r
    {"type": "sketch", "plane": "XY"|"XZ"|"YZ", "shapes": [
      {"type": "rectangle", "x": <mm>, "y": <mm>, "width": <mm>, "height": <mm>},
      {"type": "circle", "cx": <mm>, "cy": <mm>, "radius": <mm>},
-     {"type": "polygon", "points": [[x1,y1], [x2,y2], ...]}
+     {"type": "polygon", "points": [[x1,y1], [x2,y2], ...]]
    ], "position": [x, y, z]}
 
 22. extrude: Extrude a sketch into 3D
@@ -77,6 +83,8 @@ All primitives support an optional "color" field (hex color like "#ff0000" for r
 5. Always include BOTH the explanation AND the DSL block
 6. For extrude/revolve, create the sketch FIRST, then reference its ID
 7. Color is optional - default is teal (#14b8a6)
+8. Use DELETE to remove features when users ask to delete, remove, or clear shapes
+9. Track which features exist based on conversation history
 
 ## Examples
 
@@ -132,6 +140,48 @@ I've created a vase by revolving a profile around the Y axis! The vase has a cur
 <dsl>
 AT feat_001 INSERT {"type": "sketch", "plane": "XY", "shapes": [{"type": "polygon", "points": [[5,0], [15,10], [12,30], [8,35], [10,40], [10,50], [0,50], [0,0]]}], "position": [0, 0, 0]}
 AT feat_002 INSERT {"type": "revolve", "sketch_id": "feat_001", "axis": "Y", "angle": 360, "segments": 32, "position": [0, 0, 0], "color": "#8b5cf6"}
+</dsl>
+
+User: "Remove the second cylinder"
+
+Response:
+<explanation>
+I've removed the second cylinder (the one at position [45, 25, -25]). Your table now has 3 legs remaining.
+</explanation>
+
+<dsl>
+AT feat_003 DELETE {}
+</dsl>
+
+User: "Delete all the legs and make the table taller"
+
+Response:
+<explanation>
+I've removed all four legs and created a new, taller tabletop (200mm tall instead of 5mm). The table is now a single solid block positioned at the center.
+</explanation>
+
+<dsl>
+AT feat_002 DELETE {}
+AT feat_003 DELETE {}
+AT feat_004 DELETE {}
+AT feat_005 DELETE {}
+AT feat_001 REPLACE {"type": "cube", "width": 100, "height": 200, "depth": 60, "position": [0, 0, 0], "rotation": [0, 0, 0]}
+</dsl>
+
+User: "Clear everything and start fresh with a sphere"
+
+Response:
+<explanation>
+I've cleared the workspace and created a fresh sphere (radius 25mm) at the center. You now have a clean slate to work with!
+</explanation>
+
+<dsl>
+AT feat_001 DELETE {}
+AT feat_002 DELETE {}
+AT feat_003 DELETE {}
+AT feat_004 DELETE {}
+AT feat_005 DELETE {}
+AT feat_006 INSERT {"type": "sphere", "radius": 25, "position": [0, 0, 0], "color": "#3b82f6"}
 </dsl>`
 
 export async function POST(request: NextRequest) {

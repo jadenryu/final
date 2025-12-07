@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f8fafc"/>
+  
+  <!-- Header -->
+  <rect x="0" y="0" width="800" height="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="40" y="50" font-family="Inter, sans-serif" font-size="24" font-weight="600" fill="#1e293b">What research question do you have?</text>
+  
+  <!-- Search bar -->
+  <rect x="40" y="120" width="720" height="60" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="60" y="155" font-family="Inter, sans-serif" font-size="16" fill="#64748b">Ask anything about research...</text>
+  <circle cx="720" cy="150" r="20" fill="#3b82f6"/>
+  <path d="M712 142 l16 16 m-16 0 l16 -16" stroke="white" stroke-width="2" fill="none"/>
+  
+  <!-- Research Tools Section -->
+  <text x="40" y="220" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#1e293b">Research Tools</text>
+  <rect x="40" y="240" width="220" height="120" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="280" y="240" width="220" height="120" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="520" y="240" width="220" height="120" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  
+  <!-- Tool 1 -->
+  <circle cx="70" cy="270" r="16" fill="#dbeafe"/>
+  <text x="100" y="275" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1e293b">Paper Analysis</text>
+  <text x="100" y="295" font-family="Inter, sans-serif" font-size="12" fill="#64748b">Extract methodology and findings</text>
+  
+  <!-- Tool 2 -->
+  <circle cx="310" cy="270" r="16" fill="#dcfce7"/>
+  <text x="340" y="275" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1e293b">Literature Search</text>
+  <text x="340" y="295" font-family="Inter, sans-serif" font-size="12" fill="#64748b">Find relevant academic sources</text>
+  
+  <!-- Tool 3 -->
+  <circle cx="550" cy="270" r="16" fill="#fce7f3"/>
+  <text x="580" y="275" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1e293b">Data Synthesis</text>
+  <text x="580" y="295" font-family="Inter, sans-serif" font-size="12" fill="#64748b">Combine insights from sources</text>
+</svg>

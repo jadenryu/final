@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f8fafc"/>
+  
+  <!-- Modal Background -->
+  <rect x="100" y="80" width="600" height="440" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  
+  <!-- Modal Header -->
+  <text x="140" y="130" font-family="Inter, sans-serif" font-size="24" font-weight="600" fill="#1e293b">Add Research Paper</text>
+  <text x="140" y="155" font-family="Inter, sans-serif" font-size="16" fill="#64748b">Upload a PDF, provide a URL, or paste text directly</text>
+  
+  <!-- Tab Navigation -->
+  <rect x="140" y="180" width="120" height="40" rx="8" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="260" y="180" width="120" height="40" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="380" y="180" width="120" height="40" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  
+  <text x="185" y="205" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1e293b">File Upload</text>
+  <text x="310" y="205" font-family="Inter, sans-serif" font-size="14" fill="#64748b">URL</text>
+  <text x="425" y="205" font-family="Inter, sans-serif" font-size="14" fill="#64748b">Text</text>
+  
+  <!-- Upload Area -->
+  <rect x="140" y="240" width="520" height="180" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8,4"/>
+  
+  <!-- Upload Icon -->
+  <circle cx="400" cy="310" r="24" fill="#e2e8f0"/>
+  <path d="M390 310 L400 300 L410 310 M400 300 L400 330" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <text x="400" y="345" font-family="Inter, sans-serif" font-size="16" text-anchor="middle" fill="#64748b">Drag and drop your PDF here, or</text>
+  <text x="400" y="365" font-family="Inter, sans-serif" font-size="16" text-anchor="middle" fill="#3b82f6" font-weight="500">browse files</text>
+  <text x="400" y="385" font-family="Inter, sans-serif" font-size="14" text-anchor="middle" fill="#94a3b8">PDF or TXT • Max 10MB</text>
+  
+  <!-- Paper Title Field -->
+  <text x="140" y="455" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1e293b">Paper Title *</text>
+  <rect x="140" y="465" width="520" height="40" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="160" y="488" font-family="Inter, sans-serif" font-size="14" fill="#94a3b8">Enter the paper title</text>
+  
+  <!-- Action Buttons -->
+  <rect x="530" y="480" width="80" height="36" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="570" y="502" font-family="Inter, sans-serif" font-size="14" text-anchor="middle" fill="#64748b">Cancel</text>
+  
+  <rect x="620" y="480" width="120" height="36" rx="8" fill="#3b82f6"/>
+  <text x="680" y="502" font-family="Inter, sans-serif" font-size="14" font-weight="500" text-anchor="middle" fill="#ffffff">Upload Paper</text>
+</svg>

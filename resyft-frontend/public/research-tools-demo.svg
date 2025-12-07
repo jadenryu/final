@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f8fafc"/>
+  
+  <!-- Header -->
+  <text x="40" y="60" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#1e293b">Research Tools</text>
+  <rect x="180" y="40" width="100" height="28" rx="14" fill="#dbeafe"/>
+  <text x="230" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="500" text-anchor="middle" fill="#1d4ed8">AI-Powered</text>
+  
+  <!-- Tool Cards Grid -->
+  <!-- Paper Analysis Card -->
+  <rect x="40" y="100" width="220" height="140" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="60" y="120" width="40" height="40" rx="12" fill="#dbeafe"/>
+  <path d="M75 133 L85 143 M75 147 L85 137" stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <text x="120" y="135" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#1e293b">Paper Analysis</text>
+  <text x="120" y="155" font-family="Inter, sans-serif" font-size="13" fill="#64748b">Extract methodology, findings,</text>
+  <text x="120" y="170" font-family="Inter, sans-serif" font-size="13" fill="#64748b">and statistical insights from</text>
+  <text x="120" y="185" font-family="Inter, sans-serif" font-size="13" fill="#64748b">research papers</text>
+  
+  <!-- Literature Search Card -->
+  <rect x="280" y="100" width="220" height="140" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="300" y="120" width="40" height="40" rx="12" fill="#dcfce7"/>
+  <circle cx="320" cy="140" r="8" fill="none" stroke="#16a34a" stroke-width="2"/>
+  <path d="M326 146 L334 154" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
+  <text x="360" y="135" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#1e293b">Literature Search</text>
+  <text x="360" y="155" font-family="Inter, sans-serif" font-size="13" fill="#64748b">Find and synthesize relevant</text>
+  <text x="360" y="170" font-family="Inter, sans-serif" font-size="13" fill="#64748b">academic sources with proper</text>
+  <text x="360" y="185" font-family="Inter, sans-serif" font-size="13" fill="#64748b">citations</text>
+  
+  <!-- Data Synthesis Card -->
+  <rect x="520" y="100" width="220" height="140" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="540" y="120" width="40" height="40" rx="12" fill="#fce7f3"/>
+  <path d="M555 135 L565 130 L560 140 L570 135" stroke="#db2777" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <text x="600" y="135" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#1e293b">Data Synthesis</text>
+  <text x="600" y="155" font-family="Inter, sans-serif" font-size="13" fill="#64748b">Combine insights from multiple</text>
+  <text x="600" y="170" font-family="Inter, sans-serif" font-size="13" fill="#64748b">sources to identify research</text>
+  <text x="600" y="185" font-family="Inter, sans-serif" font-size="13" fill="#64748b">patterns</text>
+  
+  <!-- Additional Features Section -->
+  <text x="40" y="300" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#1e293b">Advanced Features</text>
+  
+  <!-- Feature List -->
+  <circle cx="50" cy="330" r="4" fill="#22c55e"/>
+  <text x="70" y="335" font-family="Inter, sans-serif" font-size="14" fill="#64748b">Automated citation formatting</text>
+  
+  <circle cx="50" cy="355" r="4" fill="#22c55e"/>
+  <text x="70" y="360" font-family="Inter, sans-serif" font-size="14" fill="#64748b">Quality assessment scoring</text>
+  
+  <circle cx="50" cy="380" r="4" fill="#22c55e"/>
+  <text x="70" y="385" font-family="Inter, sans-serif" font-size="14" fill="#64748b">Multi-format document support</text>
+  
+  <circle cx="50" cy="405" r="4" fill="#22c55e"/>
+  <text x="70" y="410" font-family="Inter, sans-serif" font-size="14" fill="#64748b">Real-time collaboration tools</text>
+</svg>

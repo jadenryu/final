@@ -276,6 +276,80 @@ function Shape({
   const isFilletedBox = (type === 'cube' || type === 'box') && shapeFilletRadius > 0 && !hasPerEdgeFillets
 
   const geometry = useMemo(() => {
+    // Handle boolean operations (CSG)
+    if (type === 'boolean') {
+      try {
+        const { Brush, Evaluator, SUBTRACTION, ADDITION, INTERSECTION } = require('three-bvh-csg')
+        
+        const operation = content?.operation || 'union'
+        const operandA = content?.operandA
+        const operandB = content?.operandB
+        
+        if (!operandA || !operandB) {
+          console.error('Boolean operation missing operands')
+          return new THREE.BoxGeometry(10, 10, 10)
+        }
+        
+        // Create geometry for operand A
+        const createGeometry = (operand: any) => {
+          const p = operand.primitive
+          if (p === 'cube' || p === 'box') {
+            return new THREE.BoxGeometry(operand.width || 10, operand.height || 10, operand.depth || 10)
+          } else if (p === 'cylinder') {
+            return new THREE.CylinderGeometry(operand.radius || 5, operand.radius || 5, operand.height || 10, 32)
+          } else if (p === 'sphere') {
+            return new THREE.SphereGeometry(operand.radius || 5, 32, 32)
+          } else if (p === 'cone') {
+            return new THREE.ConeGeometry(operand.radius || 5, operand.height || 10, 32)
+          }
+          return new THREE.BoxGeometry(10, 10, 10)
+        }
+        
+        const geomA = createGeometry(operandA)
+        const geomB = createGeometry(operandB)
+        
+        const brushA = new Brush(geomA)
+        const brushB = new Brush(geomB)
+        
+        // Apply positions
+        if (operandA.position) {
+          brushA.position.set(operandA.position[0], operandA.position[1], operandA.position[2])
+        }
+        if (operandB.position) {
+          brushB.position.set(operandB.position[0], operandB.position[1], operandB.position[2])
+        }
+        
+        // Apply rotations
+        if (operandA.rotation) {
+          brushA.rotation.set(
+            (operandA.rotation[0] || 0) * Math.PI / 180,
+            (operandA.rotation[1] || 0) * Math.PI / 180,
+            (operandA.rotation[2] || 0) * Math.PI / 180
+          )
+        }
+        if (operandB.rotation) {
+          brushB.rotation.set(
+            (operandB.rotation[0] || 0) * Math.PI / 180,
+            (operandB.rotation[1] || 0) * Math.PI / 180,
+            (operandB.rotation[2] || 0) * Math.PI / 180
+          )
+        }
+        
+        brushA.updateMatrixWorld()
+        brushB.updateMatrixWorld()
+        
+        const evaluator = new Evaluator()
+        const op = operation === 'subtract' ? SUBTRACTION :
+                   operation === 'union' ? ADDITION : INTERSECTION
+        
+        const result = evaluator.evaluate(brushA, brushB, op)
+        return result.geometry
+      } catch (error) {
+        console.error('Boolean operation failed:', error)
+        return new THREE.BoxGeometry(10, 10, 10)
+      }
+    }
+    
     switch (type) {
       case 'cube':
       case 'box':

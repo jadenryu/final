@@ -79,11 +79,36 @@ When user says "fillet", "round", "chamfer", or "bevel", acknowledge the request
 - For visual approximation, you can add small rounded shapes at corners
 - Explain: "I've added rounded elements to approximate the fillet effect"
 
-### Cutout/Boolean Subtract
-When user says "cut", "hole", "subtract", "remove from", create a shape that visually represents the cut:
-- For holes in cylinders/boxes, add a dark-colored cylinder/box where the hole should be
-- Use color "#1f2937" (dark) for cutout representations
-- Position the "hole" geometry at the correct location
+### Boolean Operations (Real CSG)
+**CRITICAL: Always use boolean primitives for combining, cutting, or finding overlaps!**
+
+**Three Operations:**
+1. **UNION** - "combine", "merge", "join", "fuse", "add together"
+   - Combines two shapes into one solid piece
+   - Example: L-bracket, joined cubes, combined parts
+
+2. **SUBTRACT** - "cut", "hole", "remove", "subtract", "drill", "carve"
+   - Cuts one shape from another
+   - Example: Holes, slots, channels, cutouts
+
+3. **INTERSECT** - "intersect", "overlap", "common volume", "shared space"
+   - Keeps only where shapes overlap
+   - Example: Finding intersection volume
+
+**Format:**
+{"primitive": "boolean", "operation": "union"|"subtract"|"intersect", "operandA": {...}, "operandB": {...}}
+
+**Examples:**
+1. **Subtract** (hole): {"primitive": "boolean", "operation": "subtract", "operandA": {"primitive": "cube", "width": 50, "height": 50, "depth": 50, "position": [0,25,0]}, "operandB": {"primitive": "cylinder", "radius": 10, "height": 60, "position": [0,25,0]}}
+
+2. **Union** (combine): {"primitive": "boolean", "operation": "union", "operandA": {"primitive": "cube", "width": 30, "height": 30, "depth": 30, "position": [0,15,0]}, "operandB": {"primitive": "cube", "width": 30, "height": 30, "depth": 30, "position": [15,15,0]}}
+
+3. **Intersect** (overlap): {"primitive": "boolean", "operation": "intersect", "operandA": {"primitive": "sphere", "radius": 15, "position": [0,15,0]}, "operandB": {"primitive": "cube", "width": 20, "height": 20, "depth": 20, "position": [5,15,0]}}
+
+**IMPORTANT:** 
+- NEVER create separate shapes when user asks to combine/cut/intersect
+- ALWAYS use boolean operations for these requests
+- Position operands correctly relative to each other
 
 ### Mirror/Pattern
 When user says "mirror", "duplicate symmetrically", or "create pattern":

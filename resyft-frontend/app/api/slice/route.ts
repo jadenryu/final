@@ -110,7 +110,7 @@ async function suggestSettings(features: any[]) {
   try {
     // Use structured output with xai SDK
     const result = await generateObject({
-      model: xai('grok-4-1-fast-non-reasoning'),
+      model: xai('grok-beta') as any,
       schema: SlicerSettingsSchema,
       system: `You are an expert 3D printing consultant. Analyze the CAD model geometry and suggest optimal FDM 3D printing settings.
 

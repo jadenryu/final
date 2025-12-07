@@ -94,6 +94,38 @@ export type Edge = {
     metadata?: Record<string, unknown>;
   };
   
+  export type BooleanPrimitive = {
+    primitive: 'boolean';
+    id: string;
+    operation: 'union' | 'subtract' | 'intersect';
+    operandA: {
+      primitive: string;
+      position?: [number, number, number];
+      rotation?: [number, number, number];
+      width?: number;
+      height?: number;
+      depth?: number;
+      radius?: number;
+      radiusTop?: number;
+      radiusBottom?: number;
+    };
+    operandB: {
+      primitive: string;
+      position?: [number, number, number];
+      rotation?: [number, number, number];
+      width?: number;
+      height?: number;
+      depth?: number;
+      radius?: number;
+      radiusTop?: number;
+      radiusBottom?: number;
+    };
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    metadata?: Record<string, unknown>;
+  };
+  
   // ============================================================================
   // Union Types
   // ============================================================================
@@ -105,7 +137,8 @@ export type Edge = {
     | ExtrudePrimitive 
     | RevolvePrimitive 
     | FilletPrimitive 
-    | ChamferPrimitive;
+    | ChamferPrimitive
+    | BooleanPrimitive;
   
   export type Action = 'INSERT' | 'REPLACE' | 'DELETE';
   

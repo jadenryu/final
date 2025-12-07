@@ -643,7 +643,7 @@ function Shape({
   }
 
   // Check if this is a box/cube type that supports edge selection
-  const supportsEdgeSelection = type === 'cube' || type === 'box' || type === 'wedge'
+  const supportsEdgeSelection = type === 'cube' || type === 'box' || type === 'wedge' || type === 'cylinder' || type === 'cone'
 
   // Handle click with face/edge detection
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -652,13 +652,30 @@ function Shape({
     // Get face index from intersection
     const faceIndex = e.faceIndex ?? 0
 
-    // Check for edge selection on Ctrl+click for boxes
+    // Check for edge selection on Ctrl+click
     if (e.ctrlKey && supportsEdgeSelection && onEdgeSelect) {
       const rotation = content?.rotation || [0, 0, 0]
       const position = content?.position || [0, 0, 0]
-      const closestEdge = findClosestBoxEdge(e.point, width, height, depth, position, rotation)
-      if (closestEdge) {
-        const info = createEdgeSelectionInfo(closestEdge, e.point)
+      
+      if (type === 'cube' || type === 'box' || type === 'wedge') {
+        const closestEdge = findClosestBoxEdge(e.point, width, height, depth, position, rotation)
+        if (closestEdge) {
+          const info = createEdgeSelectionInfo(closestEdge, e.point)
+          onEdgeSelect(info)
+          return
+        }
+      } else {
+        // For cylinder/cone/other shapes, create a generic edge selection
+        const featureName = 'name' in feature ? feature.name : `Feature ${feature.id}`
+        const info: SelectionInfo = {
+          featureId: feature.id,
+          featureName: featureName,
+          featureType: type,
+          selectionType: 'edge',
+          edgeIndex: faceIndex,
+          edgeName: `Edge ${faceIndex}`,
+          position: [e.point.x, e.point.y, e.point.z]
+        }
         onEdgeSelect(info)
         return
       }
@@ -1235,12 +1252,20 @@ export default function ThreeCanvas({
     }
   }, [onContextMenu])
 
+  // Handle click on empty space to deselect
+  const handleBackgroundClick = useCallback(() => {
+    if (onSelectFeature) {
+      onSelectFeature('') // Empty string clears selection
+    }
+  }, [onSelectFeature])
+
   return (
     <Canvas
       camera={{ position: [50, 50, 50], fov: 50 }}
       style={{ background: '#ffffff' }}
       gl={{ antialias: true }}
       onContextMenu={(e) => e.preventDefault()}
+      onClick={handleBackgroundClick}
     >
       {/* Lighting */}
       <ambientLight intensity={0.6} />

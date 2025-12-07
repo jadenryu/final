@@ -1046,6 +1046,51 @@ function PropertiesPanel({
             ))}
           </div>
         </div>
+
+        {/* Fillet/Chamfer Options (for cube/box only for now) */}
+        {(type === 'cube' || type === 'box') && (
+          <div className="space-y-3 border-t border-slate-200 pt-3">
+            <Label className="text-xs text-slate-500">Edge Rounding</Label>
+            
+            {/* Fillet Radius */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-slate-600">Fillet Radius (mm)</Label>
+                <span className="text-xs text-slate-400">{content?.fillet_radius || 0}mm</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={Math.min(content?.width || 10, content?.height || 10, content?.depth || 10) / 4}
+                step={0.5}
+                value={content?.fillet_radius || 0}
+                onChange={(e) => updateContent({ fillet_radius: Number(e.target.value) })}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+              />
+            </div>
+
+            {/* Chamfer Distance */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-slate-600">Chamfer Distance (mm)</Label>
+                <span className="text-xs text-slate-400">{content?.chamfer_distance || 0}mm</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={Math.min(content?.width || 10, content?.height || 10, content?.depth || 10) / 4}
+                step={0.5}
+                value={content?.chamfer_distance || 0}
+                onChange={(e) => updateContent({ chamfer_distance: Number(e.target.value) })}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+              />
+            </div>
+
+            <p className="text-[10px] text-slate-400 italic">
+              Note: Fillet and chamfer will override each other. Set one to 0 to use the other.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

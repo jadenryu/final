@@ -88,9 +88,6 @@ export default function HomePage() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <Badge className="bg-brand-50 text-brand-700 border-brand-200 px-4 py-2 mb-6">
-              AI-Powered CAD Design
-            </Badge>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Design 3D Models with<br />
               <span className="text-brand-600">Natural Language</span>
@@ -106,6 +103,8 @@ export default function HomePage() {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
+            </div>
+            <div className="flex justify-center mt-4">
               <a href="#features">
                 <Button size="lg" variant="outline" className="h-14 px-8 text-lg">
                   Learn More

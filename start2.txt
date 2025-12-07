@@ -1,0 +1,14 @@
+Next --> cont.
+
+1. please ensure users can manully edit structures using common CAD-based manipulations. ensure it is a standard CAD navigation menu
+with all features of platforms such as Onshape. 
+
+2. ensure users can manully edit all parts of a structure, including size, dimensions, and whatever else they may need to build a 
+completed structure.
+
+3. deltet the compoenent in the cnavas that says your canvas is empty and related materials in the center of hte canvas you added previously just now.
+
+4. allow users to toggle on and off a grid mode that will dictate the dimensions of the canvas on the gridlines. i see light gridlines right now,
+but users should be able to dtermine the size of those grids. 
+
+5. fix sidebar animations shown in the navigation bar, they make the sidebars tweak out. 

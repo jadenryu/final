@@ -1,0 +1,12 @@
+Next steps --> cont.
+
+1. Please start with implementing functionalities found commonly in CAD-based programs. for example, shape manipulation tools 
+such as extrude, fillet, and other features. ensure these features are consistent and are also compatible with the agent. 
+
+2. please implement the page previously found at resyft.co/about somewhere, the frontend portion of it. replace text with related 
+text to this application.
+
+3. please create a file of needed information that must be manually inputted in order to continue with this applciation. for example, 
+supabase key and such. 
+
+4. please make x, y, z axis in the canvas a bit thicker so they are visible to the user in a consistent manner. 

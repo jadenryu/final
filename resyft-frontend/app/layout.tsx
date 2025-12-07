@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Merriweather } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const playfair = Playfair_Display({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-playfair",
-  display: "swap"
-});
-
-const merriweather = Merriweather({
-  subsets: ["latin"],
-  weight: ["300", "400", "700", "900"],
-  variable: "--font-merriweather",
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta",
   display: "swap"
 });
 
 export const metadata: Metadata = {
-  title: "Resyft - Research Paper Analysis",
-  description: "Extract and distill essential data from research papers quickly and accurately",
+  title: "CAD Designer - AI-Powered Generative CAD",
+  description: "Create 3D CAD designs with AI assistance",
   icons: {
     icon: [
       { url: '/icon.png', sizes: '32x32', type: 'image/png' },
@@ -37,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${playfair.variable} ${merriweather.variable}`} suppressHydrationWarning>
+      <body className={`${plusJakartaSans.variable} font-sans`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

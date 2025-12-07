@@ -1,18 +1,12 @@
 Please complete the following steps.
 Write functional, clean code that is scalable and robust.
 
-1. Utilize the xai-sdk library to develop an agent that can translate natural language into code for a CAD application in this syntax
-    i. 1️⃣ Patch Behavior
-Each patch line follows this format:
-AT <feature_id> <ACTION> <JSON_content>
-feature_id: unique identifier of the feature
-ACTION: INSERT, REPLACE, or DELETE
-JSON_content: describes the primitive/feature
+1. First, please use 3JS programming to develop the CAD application. The structure view should be as clean as possible, so please make
+the backgorund white instead of navy blue. Additionally, in the chat, the xAI api should not return the format of the shape as it does 
+right now, but instead return natural language that guides the user on what happened. the code for the structure is simply a hidden language
+used to develop the json to create the structure. 
 
-2. The agent should be able to take English as the primary source of information and be able to easily convert it into the CAD syntax
-shown above. Syntax should be consistent. 
+2. Since we are using 3js, please ensure all stcutures are in three dimensional space. Thus, ensure all buttons for changigng views 
+are avaiable.
 
-
-NEXT --> cont.
-
-3. 
+3. ensure visibility functions work. as of right now, toggling off the visilibty for one shape makes all other shapes invisible. 

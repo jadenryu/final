@@ -1,117 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent } from '../../components/ui/card'
-import { Input } from '../../components/ui/input'
-import { Textarea } from '../../components/ui/textarea'
 import { Badge } from '../../components/ui/badge'
-import { Progress } from '../../components/ui/progress'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../components/ui/accordion'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import ShaderBackground from '../../components/shader-background'
-import Header from '../../components/shader-header'
-import HeroContent from '../../components/hero-content'
-import { TestimonialGridSection } from '../../components/testimonial-grid-section'
-import { HeroQuoteSection } from '../../components/hero-quote-section'
-import { 
-  Zap, 
-  FileText, 
-  BarChart3, 
-  Shield, 
-  Brain,
+import {
   ArrowRight,
   Sparkles,
+  Box,
+  Layers,
+  MessageSquare,
+  Cpu,
+  Zap,
+  Shield,
   Users,
-  CheckCircle,
-  Upload,
-  Link as LinkIcon,
-  Settings,
-  Star,
-  Clock,
-  BookOpen,
-  TrendingUp,
-  Award,
   Target,
-  ChevronDown
+  Pencil,
+  RotateCw,
+  Move3d,
 } from 'lucide-react'
 
-interface AnalysisResult {
-  methods?: string
-  sample_size?: number
-  key_statistics?: any
-  conclusions?: string
-  important_quotes?: string[]
-  reliability_score?: number
-  relevance_score?: number
-  suggested_text?: string
-}
-
 export default function AboutPage() {
-  const [analysisType, setAnalysisType] = useState<'url' | 'text'>('url')
-  const [url, setUrl] = useState('')
-  const [text, setText] = useState('')
-  const [prompt, setPrompt] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
-  const [progress, setProgress] = useState(0)
-
-  const handleAnalyze = async () => {
-    if ((!url.trim() && analysisType === 'url') || (!text.trim() && analysisType === 'text')) return
-    
-    setLoading(true)
-    setAnalysis(null)
-    setProgress(0)
-
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval)
-          return 90
-        }
-        return prev + 10
-      })
-    }, 200)
-
-    try {
-      const response = await fetch(`/api/extract?t=${Date.now()}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-        },
-        body: JSON.stringify({ 
-          paper_url: analysisType === 'url' ? url : undefined,
-          paper_text: analysisType === 'text' ? text : undefined,
-          extraction_type: 'all',
-          custom_prompt: prompt || 'Extract key findings, methods, sample size, and conclusions',
-          use_pydantic_agent: true
-        }),
-      })
-
-      const result = await response.json()
-      setProgress(100)
-      
-      setAnalysis({
-        methods: result.methods || 'No methodology information extracted',
-        sample_size: result.sample_size || null,
-        conclusions: result.conclusions || 'No conclusions extracted from the paper',
-        important_quotes: result.important_quotes || ['No quotes extracted from the paper'],
-        reliability_score: result.reliability_score || 0,
-        relevance_score: result.relevance_score || 0,
-        suggested_text: result._full_result?.suggested_text || 'Analysis completed - check results above'
-      })
-    } catch (error) {
-      console.error('Error:', error)
-    } finally {
-      setLoading(false)
-      clearInterval(progressInterval)
-      setProgress(100)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50/30">
       {/* Navigation */}
@@ -122,51 +34,44 @@ export default function AboutPage() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center space-x-2"
           >
-            <img 
-              src="/resyft-2.png" 
-              alt="Resyft Icon" 
-              className="w-8 h-8 object-contain"
-            />
-            <span className="text-xl playfair-semibold text-gray-900">
-              Resyft
+            <Box className="w-8 h-8 text-teal-600" />
+            <span className="text-xl font-semibold text-gray-900">
+              Resyft CAD
             </span>
           </motion.div>
-          
+
           {/* Navigation Links */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="hidden md:flex items-center space-x-8"
           >
-            <Link href="/" className="text-gray-600 hover:text-gray-900 merriweather-regular transition-colors">
+            <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">
               Home
             </Link>
-            <a href="#features" className="text-gray-600 hover:text-gray-900 merriweather-regular transition-colors">
+            <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">
               Features
             </a>
-            <a href="#testimonials-section" className="text-gray-600 hover:text-gray-900 merriweather-regular transition-colors">
-              Testimonials
+            <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 transition-colors">
+              How It Works
             </a>
-            <a href="#faq-section" className="text-gray-600 hover:text-gray-900 merriweather-regular transition-colors">
+            <a href="#faq-section" className="text-gray-600 hover:text-gray-900 transition-colors">
               FAQ
             </a>
-            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 merriweather-regular transition-colors">
-              Pricing
-            </Link>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center space-x-4"
           >
             <Link href="/login">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900 merriweather-regular">
+              <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
                 Sign In
               </Button>
             </Link>
             <Link href="/signup">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white merriweather-regular">
+              <Button className="bg-teal-600 hover:bg-teal-700 text-white">
                 Get Started
               </Button>
             </Link>
@@ -174,182 +79,190 @@ export default function AboutPage() {
         </div>
       </nav>
 
-      {/* Shader Hero Section */}
-      <ShaderBackground>
-        <Header />
-        <HeroContent />
-      </ShaderBackground>
-
-      {/* Modern Research Agent Section */}
-      <section className="py-24 px-4">
-        <div className="container mx-auto max-w-7xl">
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4">
+        <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="bg-white rounded-3xl border border-gray-200/60 shadow-xl shadow-gray-100/50 overflow-hidden"
+            className="text-center"
           >
-            <div className="grid lg:grid-cols-2 gap-0 items-center">
-              {/* Content Side */}
-              <div className="p-12 lg:p-16 space-y-8">
-                <div className="space-y-6">
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 px-4 py-2 merriweather-regular">
-                    Lightning Fast
-                  </Badge>
-                  <h2 className="text-3xl lg:text-4xl playfair-bold text-gray-900 leading-tight">
-                    Portable RAG Database System
-                  </h2>
-                  <p className="text-lg text-gray-600 merriweather-light leading-relaxed">
-                    Build custom AI models trained exclusively on your documents. Zero hallucination from web data—only accurate, grounded responses from your corpus.
-                  </p>
-                </div>
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 merriweather-bold rounded-xl">
-                  Build Your RAG Database
-                  <ArrowRight className="ml-2 w-5 h-5" />
+            <Badge className="bg-teal-50 text-teal-700 border-teal-200 px-4 py-2 mb-6">
+              AI-Powered CAD Design
+            </Badge>
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Design 3D Models with<br />
+              <span className="text-teal-600">Natural Language</span>
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
+              Resyft CAD is an AI-powered 3D modeling platform that transforms your ideas into professional CAD designs.
+              Simply describe what you want to create, and watch as your vision comes to life in real-time.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/projects">
+                <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white h-12 px-8">
+                  Start Designing
+                  <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
-              </div>
-              
-              {/* Image Side */}
-              <div className="relative p-8 lg:p-12 bg-gradient-to-br from-blue-50 to-white">
-                <div className="aspect-[4/3] relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200/60">
-                  <img 
-                    src="/stockpic.png" 
-                    alt="RAG Database Interface"
-                    className="w-full h-full object-cover bg-white"
-                  />
-                </div>
-              </div>
+              </Link>
+              <a href="#features">
+                <Button size="lg" variant="outline" className="h-12 px-8">
+                  Learn More
+                </Button>
+              </a>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Modern Paper Upload Section */}
-      <section className="py-24 px-4">
+      {/* Features Section */}
+      <section id="features" className="py-24 px-4 bg-white">
         <div className="container mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="bg-white rounded-3xl border border-gray-200/60 shadow-xl shadow-gray-100/50 overflow-hidden"
+            className="text-center mb-16"
           >
-            <div className="grid lg:grid-cols-2 gap-0 items-center">
-              {/* Image Side */}
-              <div className="relative p-8 lg:p-12 bg-gradient-to-br from-blue-50 to-white lg:order-1">
-                <div className="aspect-[4/3] relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200/60">
-                  <img 
-                    src="/stockpic.png" 
-                    alt="RAG Pipeline Interface"
-                    className="w-full h-full object-cover bg-white"
-                  />
-                </div>
-              </div>
-              
-              {/* Content Side */}
-              <div className="p-12 lg:p-16 space-y-8 lg:order-2">
-                <div className="space-y-6">
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 px-4 py-2 merriweather-regular">
-                    Smart Upload
-                  </Badge>
-                  <h2 className="text-3xl lg:text-4xl playfair-bold text-gray-900 leading-tight">
-                    Enterprise-grade RAG pipeline
-                  </h2>
-                  <p className="text-lg text-gray-600 merriweather-light leading-relaxed">
-                    Upload documents to create vector embeddings in your private knowledge base. Industry-standard RAG architecture ensures document-only AI training.
-                  </p>
-                </div>
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 merriweather-bold rounded-xl">
-                  Start Vector Indexing
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </div>
-            </div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Powerful CAD Features
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Professional-grade 3D modeling tools powered by cutting-edge AI technology
+            </p>
           </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <MessageSquare className="w-8 h-8 text-teal-600" />,
+                title: "Natural Language Design",
+                description: "Describe shapes in plain English. Say 'create a 50mm cube' or 'add a cylinder with 10mm radius' and watch your design materialize instantly."
+              },
+              {
+                icon: <Layers className="w-8 h-8 text-teal-600" />,
+                title: "Advanced Operations",
+                description: "Full support for extrude, revolve, fillet, chamfer, and sketch operations. Create complex geometries from 2D profiles with parametric control."
+              },
+              {
+                icon: <Move3d className="w-8 h-8 text-teal-600" />,
+                title: "Real-time 3D Visualization",
+                description: "Interactive 3D canvas with multiple view modes, grid overlays, and precision axis indicators. Rotate, zoom, and inspect your designs from any angle."
+              },
+              {
+                icon: <Pencil className="w-8 h-8 text-teal-600" />,
+                title: "Sketch & Extrude Workflow",
+                description: "Create 2D sketches with rectangles, circles, and polygons, then extrude them into 3D solids. Classic CAD workflow made intuitive."
+              },
+              {
+                icon: <RotateCw className="w-8 h-8 text-teal-600" />,
+                title: "Revolve Operations",
+                description: "Generate complex rotational parts by revolving 2D profiles around any axis. Perfect for vases, bottles, and turned components."
+              },
+              {
+                icon: <Cpu className="w-8 h-8 text-teal-600" />,
+                title: "AI-Powered Assistance",
+                description: "Our intelligent CAD assistant understands engineering context and generates precise, manufacturable geometry from your descriptions."
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Card className="h-full border-gray-200 hover:border-teal-200 hover:shadow-lg transition-all">
+                  <CardContent className="p-6">
+                    <div className="mb-4">{feature.icon}</div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
+                    <p className="text-gray-600">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Modern Research Tools Section */}
-      <section className="py-24 px-4">
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-24 px-4">
         <div className="container mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="bg-white rounded-3xl border border-gray-200/60 shadow-xl shadow-gray-100/50 overflow-hidden"
+            className="text-center mb-16"
           >
-            <div className="grid lg:grid-cols-2 gap-0 items-center">
-              {/* Content Side */}
-              <div className="p-12 lg:p-16 space-y-8">
-                <div className="space-y-6">
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 px-4 py-2 merriweather-regular">
-                    AI-Powered Tools
-                  </Badge>
-                  <h2 className="text-3xl lg:text-4xl playfair-bold text-gray-900 leading-tight">
-                    Zero hallucination guarantee
-                  </h2>
-                  <p className="text-lg text-gray-600 merriweather-light leading-relaxed">
-                    Retrieval-augmented generation ensures AI responses are grounded exclusively in your document corpus—no contamination from web training data.
-                  </p>
-                </div>
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 merriweather-bold rounded-xl">
-                  Query Your Corpus
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </div>
-              
-              {/* Image Side */}
-              <div className="relative p-8 lg:p-12 bg-gradient-to-br from-blue-50 to-white">
-                <div className="aspect-[4/3] relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200/60">
-                  <img 
-                    src="/stockpic.png" 
-                    alt="RAG Query Interface"
-                    className="w-full h-full object-cover bg-white"
-                  />
-                </div>
-              </div>
-            </div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              How It Works
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From idea to 3D model in three simple steps
+            </p>
           </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Describe Your Design",
+                description: "Use natural language to describe what you want to create. Be as specific or general as you like - our AI understands engineering terminology and design intent."
+              },
+              {
+                step: "02",
+                title: "AI Generates Geometry",
+                description: "Our CAD AI interprets your request and generates precise 3D geometry. Complex shapes, assemblies, and parametric features are all supported."
+              },
+              {
+                step: "03",
+                title: "Refine & Export",
+                description: "View your design in the interactive 3D canvas, make adjustments through conversation, and export your finished model for manufacturing or further development."
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="text-center"
+              >
+                <div className="text-6xl font-bold text-teal-100 mb-4">{item.step}</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{item.title}</h3>
+                <p className="text-gray-600">{item.description}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Stats Section */}
       <section className="py-20 px-4 bg-white">
-        <div className="container mx-auto">
+        <div className="container mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl playfair-bold text-gray-900 mb-6">
-              Trusted by enterprise teams worldwide
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Built for Designers & Engineers
             </h2>
-            <p className="text-xl merriweather-light text-gray-600 max-w-3xl mx-auto">
-              Join thousands of professionals building portable vector databases with zero hallucination from web data contamination
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Join professionals who are accelerating their design workflow with AI
             </p>
           </motion.div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
             {[
-              { 
-                number: "50K+", 
-                label: "Documents Processed"
-              },
-              { 
-                number: "95%", 
-                label: "Query Accuracy"
-              },
-              { 
-                number: "2s", 
-                label: "RAG Query Response"
-              },
-              { 
-                number: "1K+", 
-                label: "Active Users"
-              }
+              { number: "10+", label: "Primitive Types" },
+              { number: "5", label: "CAD Operations" },
+              { number: "< 2s", label: "Generation Time" },
+              { number: "Infinite", label: "Possibilities" }
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -358,158 +271,152 @@ export default function AboutPage() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="text-4xl md:text-5xl playfair-bold text-gray-900 mb-2">
+                <div className="text-4xl md:text-5xl font-bold text-teal-600 mb-2">
                   {stat.number}
                 </div>
-                <div className="text-gray-600 merriweather-regular">
-                  {stat.label}
-                </div>
+                <div className="text-gray-600">{stat.label}</div>
               </motion.div>
             ))}
           </div>
-
         </div>
       </section>
 
-      {/* Hero Quote Section */}
-      <HeroQuoteSection />
+      {/* Supported Operations */}
+      <section className="py-24 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="bg-gray-900 rounded-3xl p-12 text-white"
+          >
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-6">Supported CAD Operations</h2>
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+                Full parametric modeling capabilities at your fingertips
+              </p>
+            </div>
 
-      {/* Reviews Section */}
-      <TestimonialGridSection />
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { name: "Cube", desc: "Width, height, depth control" },
+                { name: "Cylinder", desc: "Radius and height parameters" },
+                { name: "Sphere", desc: "Radius-based generation" },
+                { name: "Cone", desc: "Radius and height control" },
+                { name: "Torus", desc: "Major and minor radius" },
+                { name: "Sketch", desc: "2D profile creation" },
+                { name: "Extrude", desc: "Sketch to 3D solid" },
+                { name: "Revolve", desc: "Rotational symmetry" },
+                { name: "Fillet", desc: "Edge rounding" },
+                { name: "Chamfer", desc: "Edge beveling" }
+              ].map((op, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  viewport={{ once: true }}
+                  className="bg-white/10 rounded-xl p-4 backdrop-blur-sm"
+                >
+                  <h4 className="font-semibold text-teal-400 mb-1">{op.name}</h4>
+                  <p className="text-sm text-gray-400">{op.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* FAQ Section */}
       <section id="faq-section" className="py-20 px-4 bg-white">
-        <div className="container mx-auto">
+        <div className="container mx-auto max-w-3xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl playfair-bold text-gray-900 mb-6">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl merriweather-light text-gray-600 max-w-2xl mx-auto">
-              Everything you need to know about Resyft's portable vector database architecture
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Everything you need to know about Resyft CAD
             </p>
           </motion.div>
 
-          <div className="max-w-3xl mx-auto">
-            <Accordion type="single" collapsible className="w-full">
-              {[
-                {
-                  question: "How does RAG eliminate hallucination?",
-                  answer: "Resyft's retrieval-augmented generation architecture ensures AI responses are grounded exclusively in your document corpus. By training only on your vector embeddings, we achieve zero contamination from web training data, eliminating hallucination completely."
-                },
-                {
-                  question: "What document formats can be vectorized?",
-                  answer: "Our RAG pipeline processes any text-based format - PDFs, Word docs, text files, research papers, legal contracts, technical manuals, and more. Documents are chunked, embedded, and indexed in your private vector database for semantic search."
-                },
-                {
-                  question: "How does document-only training work?",
-                  answer: "Your vector database creates vector embeddings exclusively from your document corpus. The AI model never accesses external web data or pre-trained knowledge, ensuring responses are always grounded in your specific content with zero hallucination risk."
-                },
-                {
-                  question: "What types of queries does the Retrieval-Augmented Generation system support?",
-                  answer: "Our vector search supports semantic queries like 'What are risk factors mentioned?' or exact retrieval like 'Find contract payment terms.' The RAG architecture understands context and provides document-grounded responses with precise source citations."
-                },
-                {
-                  question: "Is my vector database secure and private?",
-                  answer: "Absolutely. We use enterprise-grade encryption and your vector embeddings remain in an isolated knowledge base. Your document corpus never mixes with external training data and stays completely private to your organization."
-                },
-                {
-                  question: "How fast is vector search and retrieval?",
-                  answer: "Most RAG queries return results in under 2 seconds. Complex semantic searches across large document corpora may take up to 10 seconds. Vector indexing makes your entire knowledge base instantly searchable."
-                },
-                {
-                  question: "Do you offer enterprise RAG deployments?",
-                  answer: "Yes, we provide enterprise-grade vector database solutions for teams and organizations. Contact our sales team for shared vector databases, collaboration features, and custom on-premise deployments."
-                },
-                {
-                  question: "Can I export RAG query results and embeddings?",
-                  answer: "Definitely! Resyft provides structured responses with precise document citations. Export query results, share vector search insights, or integrate RAG outputs into your workflow while maintaining full traceability to source documents."
-                }
-              ].map((faq, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                >
-                  <AccordionItem value={`item-${index}`} className="border-b border-gray-200">
-                    <AccordionTrigger className="text-left merriweather-bold text-gray-900 hover:text-blue-600 py-6 text-lg">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-gray-600 pb-6 leading-relaxed merriweather-regular">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                </motion.div>
-              ))}
-            </Accordion>
-          </div>
-
+          <Accordion type="single" collapsible className="w-full">
+            {[
+              {
+                question: "What types of 3D shapes can I create?",
+                answer: "Resyft CAD supports a wide range of primitives including cubes, cylinders, spheres, cones, and tori. You can also create complex shapes using sketch-based operations like extrude and revolve, plus refinement operations like fillet and chamfer."
+              },
+              {
+                question: "How does the AI understand my design intent?",
+                answer: "Our AI is trained on CAD-specific terminology and engineering concepts. It understands dimensions in millimeters, standard CAD operations, and spatial relationships. You can describe shapes naturally, and the AI will generate precise geometry."
+              },
+              {
+                question: "Can I create assemblies with multiple parts?",
+                answer: "Yes! You can create multiple features in a single project. Each shape is added to your feature tree, where you can control visibility, suppression, and locking. The AI can create multiple related shapes in a single conversation."
+              },
+              {
+                question: "What export formats are supported?",
+                answer: "Currently, Resyft CAD supports JSON export of your project data. This includes all feature definitions, positions, rotations, and parameters. More export formats for manufacturing are coming soon."
+              },
+              {
+                question: "How do sketch and extrude operations work?",
+                answer: "First, create a 2D sketch on a plane (XY, XZ, or YZ) using shapes like rectangles, circles, or polygons. Then, extrude that sketch to create a 3D solid. The AI handles both steps and can create complex profiles."
+              },
+              {
+                question: "Is there a limit to project complexity?",
+                answer: "There's no hard limit on the number of features per project. The 3D canvas efficiently renders all visible features, and you can suppress features you're not actively working with to improve performance."
+              }
+            ].map((faq, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+              >
+                <AccordionItem value={`item-${index}`} className="border-b border-gray-200">
+                  <AccordionTrigger className="text-left font-semibold text-gray-900 hover:text-teal-600 py-6 text-lg">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-600 pb-6 leading-relaxed">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              </motion.div>
+            ))}
+          </Accordion>
         </div>
       </section>
 
-      {/* Still Have Questions Section */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="container mx-auto">
+      {/* CTA Section */}
+      <section className="py-24 px-4 bg-gray-900">
+        <div className="container mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <Card className="max-w-2xl mx-auto border border-blue-200 bg-blue-50">
-              <CardContent className="p-6">
-                <h3 className="text-xl playfair-bold text-gray-900 mb-3">
-                  Still have questions?
-                </h3>
-                <p className="text-gray-600 mb-4 merriweather-regular">
-                  Our RAG architecture specialists are here to help you build your portable document database.
-                </p>
-                <Link href="/support">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Contact Support
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 px-4 bg-gray-900">
-        <div className="container mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto text-center"
-          >
-            <h2 className="text-4xl md:text-5xl playfair-bold text-white mb-6">
-              Ready to build your vector database?
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Ready to transform your design workflow?
             </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed merriweather-regular">
-              Join thousands of professionals building portable Retrieval-Augmented Generation systems with enterprise-grade document-only AI models.
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Start creating professional 3D models with the power of AI. No complex software to learn - just describe what you want to build.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-              <Link href="/signup">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 text-base merriweather-bold">
-                  Deploy Your RAG System
+              <Link href="/projects">
+                <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white h-12 px-8">
+                  Start Your First Project
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-gray-400 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white h-12 px-8 text-base merriweather-bold">
-                Schedule a Demo
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
             </div>
-            <p className="text-sm text-gray-400 merriweather-regular">
-              No credit card required • Free to get started • Cancel anytime
+            <p className="text-sm text-gray-400">
+              No credit card required • Free to get started
             </p>
           </motion.div>
         </div>
@@ -521,53 +428,45 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
-                <img 
-                  src="/resyft-2.png" 
-                  alt="Resyft Icon" 
-                  className="w-10 h-10 object-contain"
-                />
-                <span className="text-2xl merriweather-bold text-white">
-                  Resyft
+                <Box className="w-10 h-10 text-teal-500" />
+                <span className="text-2xl font-bold text-white">
+                  Resyft CAD
                 </span>
               </div>
-              <p className="text-gray-400 max-w-md mb-6 leading-relaxed merriweather-regular">
-                Portable vector database system that creates custom AI models from your documents. 
-                Industry-standard architecture with zero hallucination guarantee.
+              <p className="text-gray-400 max-w-md mb-6 leading-relaxed">
+                AI-powered CAD design platform that transforms natural language descriptions into professional 3D models.
+                Design faster, iterate smarter.
               </p>
             </div>
 
             <div>
-              <h3 className="text-lg merriweather-bold text-white mb-4">Product</h3>
+              <h3 className="text-lg font-bold text-white mb-4">Product</h3>
               <ul className="space-y-3">
-                <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors merriweather-regular">Features</Link></li>
-                <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors merriweather-regular">Why Resyft?</Link></li>
-                <li><Link href="/api" className="text-gray-400 hover:text-white transition-colors merriweather-regular">For Students</Link></li>
+                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
+                <li><a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors">How It Works</a></li>
+                <li><Link href="/projects" className="text-gray-400 hover:text-white transition-colors">Projects</Link></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="text-lg merriweather-bold text-white mb-4">Company</h3>
+              <h3 className="text-lg font-bold text-white mb-4">Company</h3>
               <ul className="space-y-3">
-                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors merriweather-regular">About</Link></li>
-                <li><Link href="/blog" className="text-gray-400 hover:text-white transition-colors merriweather-regular">Team</Link></li>
-                <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors merriweather-regular">Contact</Link></li>
+                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About</Link></li>
+                <li><Link href="/support" className="text-gray-400 hover:text-white transition-colors">Support</Link></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-gray-700 pt-8 mt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-gray-400 text-sm merriweather-regular">
-                © 2025 Resyft. All rights reserved.
+              <div className="text-gray-400 text-sm">
+                © 2025 Resyft CAD. All rights reserved.
               </div>
               <div className="flex items-center space-x-4 mt-4 md:mt-0">
                 <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
                   <Sparkles className="w-3 h-3 mr-1" />
-                  RAG Architecture
+                  AI-Powered CAD
                 </Badge>
-                <div className="text-gray-400 text-sm merriweather-regular">
-                  Enterprise document-only AI models
-                </div>
               </div>
             </div>
           </div>

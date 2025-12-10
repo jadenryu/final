@@ -78,8 +78,6 @@ import {
   Ruler,
   Copy,
   Palette,
-  ImagePlus,
-  X,
 } from "lucide-react"
 
 // Dynamic import for Three.js canvas to avoid SSR issues
@@ -101,15 +99,11 @@ function FeatureTreeItem({
   projectId,
   isSelected,
   onSelect,
-  selectedFeatureIds,
-  onSelectFeature,
 }: {
   feature: Feature
   projectId: string
   isSelected: boolean
-  onSelect: () => void
-  selectedFeatureIds?: string[]
-  onSelectFeature?: (id: string) => void
+  onSelect: (id: string) => void
 }) {
   const { toggleFeatureVisibility, toggleFeatureSuppression, deleteFeature, updateFeature } = useCADStore()
   const [isExpanded, setIsExpanded] = useState(true)
@@ -140,9 +134,6 @@ function FeatureTreeItem({
       case 'hexagon':
       case 'octagonal_prism':
       case 'octagon':
-      case 'pentagonal_prism':
-      case 'pentagon':
-      case 'custom_prism':
         return <Hexagon className="w-4 h-4" />
       case 'capsule':
       case 'pipe':
@@ -220,15 +211,10 @@ function FeatureTreeItem({
       <div
         className={`flex flex-col gap-1 px-2 py-2 rounded-md cursor-pointer group transition-colors ${
           isSelected
-            ? 'bg-amber-50 border border-amber-300'
-            : showDetails
-            ? 'bg-slate-100 border border-slate-200'
-            : 'hover:bg-slate-50 border border-transparent'
+            ? 'bg-teal-100 text-teal-900 border border-teal-300'
+            : 'hover:bg-slate-100 border border-transparent'
         }`}
-        onClick={() => {
-          onSelect()
-          setShowDetails(!showDetails)
-        }}
+        onClick={() => onSelect(feature.id)}
       >
         <div className="flex items-center gap-2">
           {feature.children?.length ? (
@@ -242,18 +228,29 @@ function FeatureTreeItem({
             <span className="w-4" />
           )}
 
-          <span className={`flex-shrink-0 ${isSelected ? 'text-amber-600' : feature.visible ? 'text-brand-600' : 'text-slate-400'}`}>
+          <span className={`flex-shrink-0 ${feature.visible ? 'text-teal-600' : 'text-slate-400'}`}>
             {getFeatureIcon()}
           </span>
 
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">
               {getFeatureName()}
             </div>
-            <div className="text-xs text-slate-500 font-mono break-all">
+            <div className="text-xs text-slate-500 font-mono truncate">
               {feature.id}
             </div>
           </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowDetails(!showDetails)
+            }}
+            className="p-1 hover:bg-slate-200 rounded transition-colors opacity-0 group-hover:opacity-100"
+            title={showDetails ? 'Hide Details' : 'Show Details'}
+          >
+            {showDetails ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </button>
 
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
@@ -312,350 +309,50 @@ function FeatureTreeItem({
           </div>
         </div>
 
-        {/* Editable Properties Panel */}
+        {/* Detailed information panel */}
         {showDetails && (
-          <div className="mt-2 pt-2 border-t border-slate-200 space-y-2 text-xs" onClick={(e) => e.stopPropagation()}>
-            {/* Position */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-1 text-slate-500 font-medium">
-                <Move className="w-3 h-3" /> Position
+          <div className="mt-2 pt-2 border-t border-slate-200 space-y-1.5 text-xs">
+            <div className="flex items-start gap-2">
+              <Ruler className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-slate-500 font-medium">Dimensions</div>
+                <div className="text-slate-700 font-mono">{getDimensions()}</div>
               </div>
-              <div className="grid grid-cols-3 gap-1">
-                <div>
-                  <label className="text-[10px] text-slate-400">X</label>
-                  <input
-                    type="number"
-                    value={(feature.patch?.content as any)?.position?.[0] || 0}
-                    onChange={(e) => {
-                      const pos = (feature.patch?.content as any)?.position || [0, 0, 0]
-                      updateFeature(projectId, feature.id, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...(feature.patch?.content as any), position: [Number(e.target.value), pos[1], pos[2]] }
-                        }
-                      })
-                    }}
-                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400">Y</label>
-                  <input
-                    type="number"
-                    value={(feature.patch?.content as any)?.position?.[1] || 0}
-                    onChange={(e) => {
-                      const pos = (feature.patch?.content as any)?.position || [0, 0, 0]
-                      updateFeature(projectId, feature.id, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...(feature.patch?.content as any), position: [pos[0], Number(e.target.value), pos[2]] }
-                        }
-                      })
-                    }}
-                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400">Z</label>
-                  <input
-                    type="number"
-                    value={(feature.patch?.content as any)?.position?.[2] || 0}
-                    onChange={(e) => {
-                      const pos = (feature.patch?.content as any)?.position || [0, 0, 0]
-                      updateFeature(projectId, feature.id, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...(feature.patch?.content as any), position: [pos[0], pos[1], Number(e.target.value)] }
-                        }
-                      })
-                    }}
-                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                  />
-                </div>
+            </div>
+            
+            <div className="flex items-start gap-2">
+              <Move className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-slate-500 font-medium">Position</div>
+                <div className="text-slate-700 font-mono text-[11px]">{getPosition()}</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-2">
+              <RotateCcw className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-slate-500 font-medium">Rotation</div>
+                <div className="text-slate-700 font-mono text-[11px]">{getRotation()}</div>
               </div>
             </div>
 
-            {/* Dimensions */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-1 text-slate-500 font-medium">
-                <Ruler className="w-3 h-3" /> Dimensions
-              </div>
-              <div className="grid grid-cols-3 gap-1">
-                {(feature.patch?.content as any)?.width !== undefined && (
-                  <div>
-                    <label className="text-[10px] text-slate-400">W</label>
-                    <input
-                      type="number"
-                      value={(feature.patch?.content as any)?.width || 10}
-                      onChange={(e) => {
-                        updateFeature(projectId, feature.id, {
-                          patch: {
-                            ...feature.patch,
-                            content: { ...(feature.patch?.content as any), width: Number(e.target.value) }
-                          }
-                        })
-                      }}
-                      className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                      min={1}
+            {(feature.patch?.content as any)?.color && (
+              <div className="flex items-start gap-2">
+                <Palette className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0 flex items-center gap-2">
+                  <div className="text-slate-500 font-medium">Color</div>
+                  <div className="flex items-center gap-1">
+                    <div
+                      className="w-4 h-4 rounded border border-slate-300"
+                      style={{ backgroundColor: (feature.patch?.content as any)?.color }}
                     />
+                    <span className="text-slate-700 font-mono text-[11px]">
+                      {(feature.patch?.content as any)?.color}
+                    </span>
                   </div>
-                )}
-                {(feature.patch?.content as any)?.height !== undefined && (
-                  <div>
-                    <label className="text-[10px] text-slate-400">H</label>
-                    <input
-                      type="number"
-                      value={(feature.patch?.content as any)?.height || 10}
-                      onChange={(e) => {
-                        updateFeature(projectId, feature.id, {
-                          patch: {
-                            ...feature.patch,
-                            content: { ...(feature.patch?.content as any), height: Number(e.target.value) }
-                          }
-                        })
-                      }}
-                      className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                      min={1}
-                    />
-                  </div>
-                )}
-                {(feature.patch?.content as any)?.depth !== undefined && (
-                  <div>
-                    <label className="text-[10px] text-slate-400">D</label>
-                    <input
-                      type="number"
-                      value={(feature.patch?.content as any)?.depth || 10}
-                      onChange={(e) => {
-                        updateFeature(projectId, feature.id, {
-                          patch: {
-                            ...feature.patch,
-                            content: { ...(feature.patch?.content as any), depth: Number(e.target.value) }
-                          }
-                        })
-                      }}
-                      className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                      min={1}
-                    />
-                  </div>
-                )}
-                {(feature.patch?.content as any)?.radius !== undefined && (
-                  <div>
-                    <label className="text-[10px] text-slate-400">R</label>
-                    <input
-                      type="number"
-                      value={(feature.patch?.content as any)?.radius || 5}
-                      onChange={(e) => {
-                        updateFeature(projectId, feature.id, {
-                          patch: {
-                            ...feature.patch,
-                            content: { ...(feature.patch?.content as any), radius: Number(e.target.value) }
-                          }
-                        })
-                      }}
-                      className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                      min={1}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Rotation */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-1 text-slate-500 font-medium">
-                <RotateCcw className="w-3 h-3" /> Rotation
-              </div>
-              <div className="grid grid-cols-3 gap-1">
-                <div>
-                  <label className="text-[10px] text-slate-400">X°</label>
-                  <input
-                    type="number"
-                    value={(feature.patch?.content as any)?.rotation?.[0] || 0}
-                    onChange={(e) => {
-                      const rot = (feature.patch?.content as any)?.rotation || [0, 0, 0]
-                      updateFeature(projectId, feature.id, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...(feature.patch?.content as any), rotation: [Number(e.target.value), rot[1], rot[2]] }
-                        }
-                      })
-                    }}
-                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400">Y°</label>
-                  <input
-                    type="number"
-                    value={(feature.patch?.content as any)?.rotation?.[1] || 0}
-                    onChange={(e) => {
-                      const rot = (feature.patch?.content as any)?.rotation || [0, 0, 0]
-                      updateFeature(projectId, feature.id, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...(feature.patch?.content as any), rotation: [rot[0], Number(e.target.value), rot[2]] }
-                        }
-                      })
-                    }}
-                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400">Z°</label>
-                  <input
-                    type="number"
-                    value={(feature.patch?.content as any)?.rotation?.[2] || 0}
-                    onChange={(e) => {
-                      const rot = (feature.patch?.content as any)?.rotation || [0, 0, 0]
-                      updateFeature(projectId, feature.id, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...(feature.patch?.content as any), rotation: [rot[0], rot[1], Number(e.target.value)] }
-                        }
-                      })
-                    }}
-                    className="w-full h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                  />
                 </div>
               </div>
-            </div>
-
-            {/* Color */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-1 text-slate-500 font-medium">
-                <Palette className="w-3 h-3" /> Color
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={(feature.patch?.content as any)?.color || '#3342d2'}
-                  onChange={(e) => {
-                    updateFeature(projectId, feature.id, {
-                      patch: {
-                        ...feature.patch,
-                        content: { ...(feature.patch?.content as any), color: e.target.value }
-                      }
-                    })
-                  }}
-                  className="w-8 h-6 rounded border border-slate-200 cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={(feature.patch?.content as any)?.color || '#3342d2'}
-                  onChange={(e) => {
-                    updateFeature(projectId, feature.id, {
-                      patch: {
-                        ...feature.patch,
-                        content: { ...(feature.patch?.content as any), color: e.target.value }
-                      }
-                    })
-                  }}
-                  className="flex-1 h-6 px-1 text-xs font-mono border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                />
-              </div>
-              {/* Color presets */}
-              <div className="flex gap-1 flex-wrap">
-                {['#ef4444', '#f97316', '#eab308', '#22c55e', '#3342d2', '#3b82f6', '#a855f7', '#ec4899', '#ffffff', '#1f2937'].map(color => (
-                  <button
-                    key={color}
-                    onClick={() => {
-                      updateFeature(projectId, feature.id, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...(feature.patch?.content as any), color }
-                        }
-                      })
-                    }}
-                    className="w-5 h-5 rounded border border-slate-200 hover:scale-110 transition-transform"
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Fillet - only for cube/box */}
-            {(() => {
-              const content = feature.patch?.content as any
-              const type = content?.type || content?.primitive
-              if (type !== 'cube' && type !== 'box') return null
-              return (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1 text-slate-500 font-medium">
-                    <Sparkles className="w-3 h-3" /> Fillet
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={content?.fillet_radius || 0}
-                      onChange={(e) => {
-                        const radius = Number(e.target.value)
-                        updateFeature(projectId, feature.id, {
-                          patch: {
-                            ...feature.patch,
-                            content: {
-                              ...content,
-                              fillet_radius: radius,
-                              edge_fillets: []
-                            }
-                          }
-                        })
-                      }}
-                      className="flex-1 h-6 px-1 text-xs border border-slate-200 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                      min={0}
-                      step={0.5}
-                      placeholder="0"
-                    />
-                    <span className="text-[10px] text-slate-400">mm</span>
-                  </div>
-                  {/* Quick fillet presets */}
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3, 5].map(r => (
-                      <button
-                        key={r}
-                        onClick={() => {
-                          updateFeature(projectId, feature.id, {
-                            patch: {
-                              ...feature.patch,
-                              content: {
-                                ...content,
-                                fillet_radius: r,
-                                edge_fillets: []
-                              }
-                            }
-                          })
-                        }}
-                        className={`flex-1 h-5 text-[10px] rounded border transition-colors ${
-                          (content?.fillet_radius || 0) === r
-                            ? 'bg-brand-100 border-brand-300 text-brand-700'
-                            : 'border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        {r === 0 ? 'None' : `${r}mm`}
-                      </button>
-                    ))}
-                  </div>
-                  {content?.edge_fillets?.length > 0 && (
-                    <div className="text-[10px] text-amber-600 flex items-center gap-1">
-                      <span>{content.edge_fillets.length} edge(s) filleted</span>
-                      <button
-                        onClick={() => {
-                          updateFeature(projectId, feature.id, {
-                            patch: {
-                              ...feature.patch,
-                              content: { ...content, edge_fillets: [], fillet_radius: 0 }
-                            }
-                          })
-                        }}
-                        className="underline hover:no-underline"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )
-            })()}
+            )}
 
             {/* Status badges */}
             <div className="flex items-center gap-1 pt-1">
@@ -687,10 +384,8 @@ function FeatureTreeItem({
           <FeatureTreeItem
             feature={child}
             projectId={projectId}
-            isSelected={selectedFeatureIds?.includes(child.id) || false}
-            onSelect={() => onSelectFeature?.(child.id)}
-            selectedFeatureIds={selectedFeatureIds}
-            onSelectFeature={onSelectFeature}
+            isSelected={isSelected}
+            onSelect={onSelect}
           />
         </div>
       ))}
@@ -705,7 +400,7 @@ function ChatMessage({ message }: { message: { role: string; content: string } }
       <div
         className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
           message.role === 'user'
-            ? 'bg-brand-600 text-white'
+            ? 'bg-teal-600 text-white'
             : 'bg-slate-100 text-slate-900'
         }`}
       >
@@ -743,7 +438,7 @@ function PropertiesPanel({
     <div className="absolute top-4 right-4 w-72 bg-white rounded-lg shadow-xl border border-slate-200 z-10">
       <div className="p-3 border-b border-slate-200 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-          <Settings className="w-4 h-4 text-brand-600" />
+          <Settings className="w-4 h-4 text-teal-600" />
           Properties
         </h3>
         <button
@@ -1021,21 +716,21 @@ function PropertiesPanel({
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={content?.color || '#3342d2'}
+              value={content?.color || '#14b8a6'}
               onChange={(e) => updateContent({ color: e.target.value })}
               className="w-10 h-8 rounded border border-slate-200 cursor-pointer"
             />
             <Input
               type="text"
-              value={content?.color || '#3342d2'}
+              value={content?.color || '#14b8a6'}
               onChange={(e) => updateContent({ color: e.target.value })}
               className="h-8 text-sm flex-1"
-              placeholder="#3342d2"
+              placeholder="#14b8a6"
             />
           </div>
           {/* Quick color presets */}
           <div className="flex gap-1 flex-wrap">
-            {['#ef4444', '#f97316', '#eab308', '#22c55e', '#3342d2', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#6b7280'].map(color => (
+            {['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#6b7280'].map(color => (
               <button
                 key={color}
                 onClick={() => updateContent({ color })}
@@ -1046,51 +741,6 @@ function PropertiesPanel({
             ))}
           </div>
         </div>
-
-        {/* Fillet/Chamfer Options (for cube/box only for now) */}
-        {(type === 'cube' || type === 'box') && (
-          <div className="space-y-3 border-t border-slate-200 pt-3">
-            <Label className="text-xs text-slate-500">Edge Rounding</Label>
-            
-            {/* Fillet Radius */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs text-slate-600">Fillet Radius (mm)</Label>
-                <span className="text-xs text-slate-400">{content?.fillet_radius || 0}mm</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={Math.min(content?.width || 10, content?.height || 10, content?.depth || 10) / 4}
-                step={0.5}
-                value={content?.fillet_radius || 0}
-                onChange={(e) => updateContent({ fillet_radius: Number(e.target.value) })}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
-              />
-            </div>
-
-            {/* Chamfer Distance */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs text-slate-600">Chamfer Distance (mm)</Label>
-                <span className="text-xs text-slate-400">{content?.chamfer_distance || 0}mm</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={Math.min(content?.width || 10, content?.height || 10, content?.depth || 10) / 4}
-                step={0.5}
-                value={content?.chamfer_distance || 0}
-                onChange={(e) => updateContent({ chamfer_distance: Number(e.target.value) })}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
-              />
-            </div>
-
-            <p className="text-[10px] text-slate-400 italic">
-              Note: Fillet and chamfer will override each other. Set one to 0 to use the other.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -1108,8 +758,8 @@ export default function EditorPage() {
     setSelectedFeatures,
     setViewMode,
     addFeature,
-    updateFeature,
     deleteFeature,
+    booleanFeature,
     setIsGenerating,
     updateProject,
     exportProject,
@@ -1126,22 +776,6 @@ export default function EditorPage() {
   const [featureCounter, setFeatureCounter] = useState(1)
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false)
   const [activeTool, setActiveTool] = useState<'select' | 'move' | 'rotate' | 'scale' | 'pan'>('select')
-
-  // Face and edge selection state
-  const [selectedFaceInfo, setSelectedFaceInfo] = useState<import("../../../components/cad/ThreeCanvas").SelectionInfo | null>(null)
-  const [selectedEdgeInfo, setSelectedEdgeInfo] = useState<import("../../../components/cad/ThreeCanvas").SelectionInfo | null>(null)
-  const [contextMenu, setContextMenu] = useState<{
-    visible: boolean
-    x: number
-    y: number
-    selectionInfo: import("../../../components/cad/ThreeCanvas").SelectionInfo | null
-  }>({ visible: false, x: 0, y: 0, selectionInfo: null })
-
-  // Image upload state
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false)
-  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const project = projects.find(p => p.id === projectId)
 
@@ -1169,122 +803,147 @@ export default function EditorPage() {
     }
   }, [project?.features])
 
-  // Handle face selection
-  const handleFaceSelect = (info: import("../../../components/cad/ThreeCanvas").SelectionInfo) => {
-    console.log('Face selected:', info)
-    setSelectedFaceInfo(info)
-    setSelectedEdgeInfo(null) // Clear edge selection
-    setSelectedFeatures([info.featureId])
-    setShowPropertiesPanel(true)
-  }
+  // Replace your handleSendMessage function with this corrected version
 
-  // Handle edge selection
-  const handleEdgeSelect = (info: import("../../../components/cad/ThreeCanvas").SelectionInfo) => {
-    console.log('Edge selected:', info)
-    setSelectedEdgeInfo(info)
-    setSelectedFaceInfo(null) // Clear face selection
-    setSelectedFeatures([info.featureId])
-    setShowPropertiesPanel(true)
-  }
+const handleSendMessage = async () => {
+  if (!chatInput.trim() || editor.isGenerating) return
 
-  // Handle context menu
-  const handleContextMenu = (info: import("../../../components/cad/ThreeCanvas").SelectionInfo, screenPos: { x: number, y: number }) => {
-    setContextMenu({
-      visible: true,
-      x: screenPos.x,
-      y: screenPos.y,
-      selectionInfo: info
-    })
-  }
+  const userMessage = chatInput.trim()
+  setChatInput("")
+  setLocalMessages(prev => [...prev, { role: 'user', content: userMessage }])
+  setIsGenerating(true)
 
-  // Handle feature double-click
-  const handleFeatureDoubleClick = (id: string) => {
-    setSelectedFeatures([id])
-    setSelectedFaceInfo(null)
-    setSelectedEdgeInfo(null)
-    setShowPropertiesPanel(true)
-  }
-
-  // Close context menu on click outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (contextMenu.visible) {
-        setContextMenu({ ...contextMenu, visible: false })
-      }
-    }
-    if (contextMenu.visible) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [contextMenu])
-
-  // Handle image selection
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        setLocalMessages(prev => [...prev, { role: 'assistant', content: 'Please select a valid image file (JPG, PNG).' }])
-        return
-      }
-      setSelectedImage(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  // Clear selected image
-  const clearSelectedImage = () => {
-    setSelectedImage(null)
-    setImagePreview(null)
-    if (imageInputRef.current) {
-      imageInputRef.current.value = ''
-    }
-  }
-
-  // Analyze image and create CAD shapes
-  const handleAnalyzeImage = async () => {
-    if (!selectedImage || isAnalyzingImage || !project) return
-
-    setIsAnalyzingImage(true)
-    setLocalMessages(prev => [...prev, { role: 'user', content: `[Analyzing uploaded image: ${selectedImage.name}]` }])
-
-    try {
-      const formData = new FormData()
-      formData.append('image', selectedImage)
-
-      const response = await fetch('/api/analyze-image', {
-        method: 'POST',
-        body: formData
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: userMessage,
+        conversation_history: localMessages.filter(m => m.role !== 'system').slice(-4).map(m => ({
+          role: m.role,
+          content: m.content
+        }))
       })
+    })
 
-      const data = await response.json()
+    const data = await response.json()
+    console.log('API Response:', data)
 
-      if (!data.success) {
-        setLocalMessages(prev => [...prev, { role: 'assistant', content: `Failed to analyze image: ${data.error || 'Unknown error'}` }])
-        return
-      }
+    if (data.error) {
+      setLocalMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.details || data.error}` }])
+    } else {
+      setLocalMessages(prev => [...prev, { role: 'assistant', content: data.response }])
+      console.log('Patches received:', data.patches)
 
-      // Add analysis result to chat
-      setLocalMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `I analyzed your image and found ${data.totalShapes} shape(s):\n\n${data.description}\n\nConfidence: ${data.confidence}`
-      }])
+      if (data.patches && data.patches.length > 0 && project) {
+        // Separate patches by type
+        const deletions = data.patches.filter((p: any) => p.action === 'DELETE')
+        const booleans = data.patches.filter((p: any) => {
+          const primitive = p.content?.primitive || p.content?.type
+          return primitive === 'union' || primitive === 'subtract' || primitive === 'intersect'
+        })
+        const regularOps = data.patches.filter((p: any) => {
+          const primitive = p.content?.primitive || p.content?.type
+          return p.action !== 'DELETE' && !['union', 'subtract', 'intersect'].includes(primitive)
+        })
+        
+        console.log('Deletions:', deletions.length, 'Booleans:', booleans.length, 'Regular:', regularOps.length)
+        
+        // First pass: handle DELETEs
+        deletions.forEach((patch: any) => {
+          console.log('Deleting feature:', patch.feature_id)
+          deleteFeature(projectId, patch.feature_id)
+        })
 
-      // Process patches and add features
-      if (data.patches && data.patches.length > 0) {
-        let counter = featureCounter
+        // Get fresh project state
+        const currentProject = projects.find(p => p.id === projectId)
+        if (!currentProject) return
 
-        data.patches.forEach((patch: any) => {
-          const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
-          const featureId = `feat_${String(counter).padStart(3, '0')}_${uniqueSuffix}`
+        // Calculate counter
+        const existingIds = currentProject.features.map(f => {
+          const match = f.id.match(/feat_(\d+)/)
+          return match ? parseInt(match[1]) : 0
+        })
+        const maxExistingId = existingIds.length > 0 ? Math.max(...existingIds) : 0
+        let counter = Math.max(featureCounter, maxExistingId + 1)
 
+        console.log('Starting counter:', counter, 'Features:', currentProject.features.length)
+
+        // Second pass: handle regular primitives
+        regularOps.forEach((patch: any) => {
+          if (patch.action === 'INSERT') {
+            let featureId = `feat_${String(counter).padStart(3, '0')}`
+            console.log('Inserting feature:', featureId)
+            
+            const feature: Feature = {
+              id: featureId,
+              name: `${patch.content.primitive || 'Shape'} ${featureId.split('_')[1] || ''}`,
+              type: 'primitive',
+              visible: true,
+              locked: false,
+              suppressed: false,
+              patch: {
+                feature_id: featureId,
+                action: 'INSERT',
+                content: patch.content
+              }
+            }
+            addFeature(projectId, feature)
+            counter++
+          } else if (patch.action === 'REPLACE') {
+            const featureId = patch.feature_id
+            const existingFeature = currentProject.features.find(f => f.id === featureId)
+            
+            if (existingFeature) {
+              deleteFeature(projectId, featureId)
+            }
+            
+            const feature: Feature = {
+              id: featureId,
+              name: `${patch.content.primitive || 'Shape'} ${featureId.split('_')[1] || ''}`,
+              type: 'primitive',
+              visible: true,
+              locked: false,
+              suppressed: false,
+              patch: {
+                feature_id: featureId,
+                action: 'INSERT',
+                content: patch.content
+              }
+            }
+            addFeature(projectId, feature)
+          }
+        })
+        
+        // Third pass: handle boolean operations
+        // Get FRESH project again after all primitives are added
+        const projectAfterPrimitives = projects.find(p => p.id === projectId)
+        if (!projectAfterPrimitives) return
+        
+        booleans.forEach((patch: any) => {
+          const primitive = patch.content.primitive || patch.content.type
+          const targetId = patch.content.target_id
+          const toolId = patch.content.tool_id
+          
+          console.log(`Processing boolean: ${primitive} - target: ${targetId}, tool: ${toolId}`)
+          
+          // Verify both features exist
+          const targetExists = projectAfterPrimitives.features.find(f => f.id === targetId)
+          const toolExists = projectAfterPrimitives.features.find(f => f.id === toolId)
+          
+          if (!targetExists || !toolExists) {
+            console.error(`Boolean operation failed - target exists: ${!!targetExists}, tool exists: ${!!toolExists}`)
+            return
+          }
+          
+          // Create the boolean feature
+          let featureId = `feat_${String(counter).padStart(3, '0')}`
+          console.log('Creating boolean feature:', featureId)
+          
           const feature: Feature = {
             id: featureId,
-            name: `${patch.content.primitive || 'Shape'} ${counter}`,
-            type: 'primitive',
+            name: `${primitive} ${featureId.split('_')[1] || ''}`,
+            type: 'boolean',
             visible: true,
             locked: false,
             suppressed: false,
@@ -1296,193 +955,29 @@ export default function EditorPage() {
           }
           addFeature(projectId, feature)
           counter++
+          
+          // Note: The rendering logic in ThreeCanvas/FeatureRenderer will handle the actual CSG operation
         })
-
+        
+        console.log('Final counter:', counter)
         setFeatureCounter(counter)
-        setLocalMessages(prev => [...prev, {
-          role: 'assistant',
-          content: `Created ${data.patches.length} shapes from the image. You can edit them in the feature tree on the left.`
-        }])
       }
-
-      // Clear the image after successful analysis
-      clearSelectedImage()
-
-    } catch (error) {
-      console.error('Image analysis error:', error)
-      setLocalMessages(prev => [...prev, { role: 'assistant', content: 'Failed to analyze image. Please try again.' }])
-    } finally {
-      setIsAnalyzingImage(false)
     }
+  } catch (error) {
+    console.error('Chat error:', error)
+    setLocalMessages(prev => [...prev, { role: 'assistant', content: 'Failed to connect to AI service. Please try again.' }])
+  } finally {
+    setIsGenerating(false)
   }
-
-  const handleSendMessage = async () => {
-    if (!chatInput.trim() || editor.isGenerating) return
-  
-    const userMessage = chatInput.trim()
-    setChatInput("")
-    setLocalMessages(prev => [...prev, { role: 'user', content: userMessage }])
-    setIsGenerating(true)
-  
-    try {
-      // Build detailed scene context for the AI - include all shapes with their properties
-      const sceneContext = project?.features.map(f => {
-        const content = f.patch?.content as any
-        if (!content) return null
-        return {
-          id: f.id,
-          type: content.primitive || content.type || 'unknown',
-          position: content.position || [0, 0, 0],
-          rotation: content.rotation || [0, 0, 0],
-          dimensions: {
-            width: content.width,
-            height: content.height,
-            depth: content.depth,
-            radius: content.radius,
-            tube: content.tube,
-            radiusTop: content.radiusTop,
-            radiusBottom: content.radiusBottom,
-          },
-          color: content.color
-        }
-      }).filter(Boolean) || []
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          conversation_history: [
-            // Only include user/assistant messages, not system messages
-            ...localMessages.filter(m => m.role !== 'system').slice(-4).map(m => ({
-              role: m.role,
-              content: m.content
-            }))
-          ],
-          sceneContext: sceneContext
-        })
-      })
-  
-      const data = await response.json()
-  
-      console.log('API Response:', data) // DEBUG: Check what we're getting back
-  
-      if (data.error) {
-        setLocalMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.details || data.error}` }])
-      } else {
-        // Add the natural language response to chat
-        setLocalMessages(prev => [...prev, { role: 'assistant', content: data.response }])
-  
-        console.log('Patches received:', data.patches) // DEBUG: Check patches
-  
-        // Process patches from the API response
-        if (data.patches && data.patches.length > 0 && project) {
-          // First pass: handle all DELETEs
-          const deletions = data.patches.filter((p: any) => p.action === 'DELETE')
-          const nonDeletions = data.patches.filter((p: any) => p.action !== 'DELETE')
-          
-          console.log('Processing deletions:', deletions.length)
-          deletions.forEach((patch: any) => {
-            console.log('Deleting feature:', patch.feature_id)
-            deleteFeature(projectId, patch.feature_id)
-          })
-  
-          // Get fresh project state after deletions
-          const currentProject = projects.find(p => p.id === projectId)
-          if (!currentProject) return
-  
-          // Calculate counter based on current state AFTER deletions
-          const existingIds = currentProject.features.map(f => {
-            const match = f.id.match(/feat_(\d+)/)
-            return match ? parseInt(match[1]) : 0
-          })
-          const maxExistingId = existingIds.length > 0 ? Math.max(...existingIds) : 0
-          let counter = Math.max(featureCounter, maxExistingId + 1)
-  
-          console.log('Starting counter:', counter, 'Max existing ID:', maxExistingId, 'Current features:', currentProject.features.length)
-  
-          // Second pass: handle INSERTs and REPLACEs
-          nonDeletions.forEach((patch: any, index: number) => {
-            console.log(`Processing patch ${index}:`, patch) // DEBUG
-  
-            if (patch.action === 'DELETE') {
-              console.log('Deleting feature:', patch.feature_id)
-              deleteFeature(projectId, patch.feature_id)
-            } else if (patch.action === 'INSERT') {
-              // Generate a truly unique feature ID with timestamp and random suffix
-              const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
-              let featureId = `feat_${String(counter).padStart(3, '0')}_${uniqueSuffix}`
-              console.log('Inserting feature:', featureId, 'with content:', patch.content)
-
-              const feature: Feature = {
-                id: featureId,
-                name: `${patch.content.primitive || 'Shape'} ${counter}`,
-                type: 'primitive',
-                visible: true,
-                locked: false,
-                suppressed: false,
-                patch: {
-                  feature_id: featureId,
-                  action: 'INSERT',
-                  content: patch.content
-                }
-              }
-              addFeature(projectId, feature)
-              counter++
-            } else if (patch.action === 'REPLACE') {
-              const originalFeatureId = patch.feature_id
-              const existingFeature = project.features.find(f => f.id === originalFeatureId)
-
-              console.log('Replacing feature:', originalFeatureId, 'exists:', !!existingFeature)
-
-              if (existingFeature) {
-                deleteFeature(projectId, originalFeatureId)
-              }
-
-              // Generate new unique ID for replaced feature
-              const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
-              const newFeatureId = `feat_${String(counter).padStart(3, '0')}_${uniqueSuffix}`
-
-              const feature: Feature = {
-                id: newFeatureId,
-                name: `${patch.content.primitive || 'Shape'} ${counter}`,
-                type: 'primitive',
-                visible: true,
-                locked: false,
-                suppressed: false,
-                patch: {
-                  feature_id: newFeatureId,
-                  action: 'INSERT',
-                  content: patch.content
-                }
-              }
-              addFeature(projectId, feature)
-              counter++
-            }
-          })
-          
-          console.log('Final counter:', counter) // DEBUG
-          setFeatureCounter(counter)
-        } else {
-          console.log('No patches to process') // DEBUG
-        }
-      }
-    } catch (error) {
-      console.error('Chat error:', error) // DEBUG
-      setLocalMessages(prev => [...prev, { role: 'assistant', content: 'Failed to connect to AI service. Please try again.' }])
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-  
+}
   if (!project) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-lg font-semibold text-slate-900 mb-2">Project not found</h2>
-          <Button onClick={() => router.push('/projects')} variant="outline">
+          <Button onClick={() => router.push('/')} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Projects
+            Back to Dashboard
           </Button>
         </div>
       </div>
@@ -1496,7 +991,7 @@ export default function EditorPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push('/projects')}
+          onClick={() => router.push('/')}
           className="text-slate-300 hover:text-white hover:bg-slate-700"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1533,29 +1028,10 @@ export default function EditorPage() {
         <div className="h-6 w-px bg-slate-700" />
 
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-slate-300 hover:text-white hover:bg-slate-700"
-            onClick={() => {
-              // Simple undo: delete the last feature
-              if (project && project.features.length > 0) {
-                const lastFeature = project.features[project.features.length - 1]
-                deleteFeature(projectId, lastFeature.id)
-              }
-            }}
-            disabled={!project || project.features.length === 0}
-            title="Undo last action (Ctrl+Z)"
-          >
+          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-700" disabled>
             <Undo className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-slate-300 hover:text-white hover:bg-slate-700 opacity-50 cursor-not-allowed"
-            disabled
-            title="Redo (coming soon)"
-          >
+          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-700" disabled>
             <Redo className="w-4 h-4" />
           </Button>
         </div>
@@ -1700,7 +1176,7 @@ export default function EditorPage() {
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setShowSettingsDialog(false)} className="bg-brand-600 hover:bg-brand-700">
+            <Button onClick={() => setShowSettingsDialog(false)} className="bg-teal-600 hover:bg-teal-700">
               Done
             </Button>
           </DialogFooter>
@@ -1721,7 +1197,7 @@ export default function EditorPage() {
           <div className="w-64 flex flex-col h-full" style={{ opacity: leftSidebarOpen ? 1 : 0, transition: 'opacity 150ms ease-out' }}>
             <div className="p-3 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
               <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-brand-600" />
+                <Layers className="w-4 h-4 text-teal-600" />
                 Features
               </h2>
               <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
@@ -1744,39 +1220,12 @@ export default function EditorPage() {
                       feature={feature}
                       projectId={projectId}
                       isSelected={editor.selectedFeatureIds.includes(feature.id)}
-                      onSelect={() => {
-                        setSelectedFeatures([feature.id])
-                        setShowPropertiesPanel(true)
-                      }}
-                      selectedFeatureIds={editor.selectedFeatureIds}
-                      onSelectFeature={(id) => {
-                        setSelectedFeatures([id])
-                        setShowPropertiesPanel(true)
-                      }}
+                      onSelect={(id) => setSelectedFeatures([id])}
                     />
                   ))
                 )}
               </div>
             </ScrollArea>
-
-            {/* Clear All Button */}
-            {project.features.length > 0 && (
-              <div className="p-3 border-t border-slate-200">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => {
-                    if (confirm("Clear all features?")) {
-                      project.features.forEach(f => deleteFeature(projectId, f.id))
-                    }
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear All
-                </Button>
-              </div>
-            )}
           </div>
         </aside>
 
@@ -1790,126 +1239,14 @@ export default function EditorPage() {
             showGrid={project.settings.showGrid}
             showAxes={project.settings.showAxes}
             gridSize={project.settings.gridSize}
-            onSelectFeature={(id) => {
-              setSelectedFeatures([id])
-              setShowPropertiesPanel(true)
-            }}
-            onDoubleClickFeature={handleFeatureDoubleClick}
-            onFaceSelect={handleFaceSelect}
-            onEdgeSelect={handleEdgeSelect}
-            onContextMenu={handleContextMenu}
-            selectedFaceInfo={selectedFaceInfo}
-            selectedEdgeInfo={selectedEdgeInfo}
           />
-
-          {/* Selection hint */}
-          <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-3 py-1.5 rounded-md shadow-lg">
-            Double-click: Feature | Shift+Click: Face | Ctrl+Click: Edge
-          </div>
-
-          {/* Context Menu */}
-          {contextMenu.visible && contextMenu.selectionInfo && (
-            <div
-              className="fixed bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50"
-              style={{ left: contextMenu.x, top: contextMenu.y }}
-            >
-              <div className="px-3 py-2 border-b border-slate-100">
-                <div className="text-xs font-semibold text-slate-900">
-                  {contextMenu.selectionInfo.selectionType === 'face' && `Face ${contextMenu.selectionInfo.faceIndex}`}
-                  {contextMenu.selectionInfo.selectionType === 'edge' && `Edge ${contextMenu.selectionInfo.edgeIndex}`}
-                  {contextMenu.selectionInfo.selectionType === 'feature' && contextMenu.selectionInfo.featureName}
-                </div>
-                <div className="text-[10px] text-slate-500">
-                  {contextMenu.selectionInfo.featureName}
-                </div>
-              </div>
-              <button
-                className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2"
-                onClick={() => {
-                  const info = contextMenu.selectionInfo
-                  if (info) {
-                    const feature = project.features.find(f => f.id === info.featureId)
-                    if (feature) {
-                      const content = feature.patch?.content as any
-                      const currentFillet = content?.fillet_radius || 0
-                      // Add 2mm fillet radius (or toggle off if already filleted)
-                      const newFillet = currentFillet > 0 ? 0 : 2
-                      
-                      updateFeature(projectId, info.featureId, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...content, fillet_radius: newFillet, chamfer_distance: 0 }
-                        }
-                      })
-                      setShowPropertiesPanel(true)
-                    }
-                  }
-                  setContextMenu({ ...contextMenu, visible: false })
-                }}
-              >
-                <RotateCw className="w-3.5 h-3.5" />
-                Fillet {contextMenu.selectionInfo.selectionType === 'edge' ? 'Edge' : 'Face'}
-              </button>
-              <button
-                className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2"
-                onClick={() => {
-                  const info = contextMenu.selectionInfo
-                  if (info) {
-                    const feature = project.features.find(f => f.id === info.featureId)
-                    if (feature) {
-                      const content = feature.patch?.content as any
-                      const currentChamfer = content?.chamfer_distance || 0
-                      // Add 2mm chamfer distance (or toggle off if already chamfered)
-                      const newChamfer = currentChamfer > 0 ? 0 : 2
-                      
-                      updateFeature(projectId, info.featureId, {
-                        patch: {
-                          ...feature.patch,
-                          content: { ...content, chamfer_distance: newChamfer, fillet_radius: 0 }
-                        }
-                      })
-                      setShowPropertiesPanel(true)
-                    }
-                  }
-                  setContextMenu({ ...contextMenu, visible: false })
-                }}
-              >
-                <Triangle className="w-3.5 h-3.5" />
-                Chamfer {contextMenu.selectionInfo.selectionType === 'edge' ? 'Edge' : 'Face'}
-              </button>
-              {contextMenu.selectionInfo.selectionType === 'face' && (
-                <button
-                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2"
-                  onClick={() => {
-                    // TODO: Add extrude operation
-                    console.log('Extrude face', contextMenu.selectionInfo)
-                    setContextMenu({ ...contextMenu, visible: false })
-                  }}
-                >
-                  <ArrowUp className="w-3.5 h-3.5" />
-                  Extrude Face
-                </button>
-              )}
-              <div className="border-t border-slate-100 mt-1 pt-1">
-                <button
-                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 flex items-center gap-2 text-slate-500"
-                  onClick={() => {
-                    setContextMenu({ ...contextMenu, visible: false })
-                  }}
-                >
-                  <X className="w-3.5 h-3.5" />
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* CAD Tool Toolbar - Left side vertical */}
           <div className="absolute top-4 left-4 flex flex-col gap-1 bg-white/95 rounded-lg shadow-lg p-1 border border-slate-200">
             <Button
               size="sm"
-              variant="ghost"
-              className={`w-9 h-9 p-0 ${activeTool === 'select' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
+              variant={activeTool === 'select' ? 'default' : 'ghost'}
+              className={`w-9 h-9 p-0 ${activeTool === 'select' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
               onClick={() => setActiveTool('select')}
               title="Select (V)"
             >
@@ -1917,52 +1254,36 @@ export default function EditorPage() {
             </Button>
             <Button
               size="sm"
-              variant="ghost"
-              className={`w-9 h-9 p-0 ${activeTool === 'move' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
-              onClick={() => {
-                setActiveTool('move')
-                // If a feature is selected, show move instructions
-                if (editor.selectedFeatureIds.length > 0) {
-                  setShowPropertiesPanel(true)
-                }
-              }}
-              title="Move (G) - Select a shape and edit position in sidebar"
+              variant={activeTool === 'move' ? 'default' : 'ghost'}
+              className={`w-9 h-9 p-0 ${activeTool === 'move' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+              onClick={() => setActiveTool('move')}
+              title="Move (G)"
             >
               <Move className="w-4 h-4" />
             </Button>
             <Button
               size="sm"
-              variant="ghost"
-              className={`w-9 h-9 p-0 ${activeTool === 'rotate' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
-              onClick={() => {
-                setActiveTool('rotate')
-                if (editor.selectedFeatureIds.length > 0) {
-                  setShowPropertiesPanel(true)
-                }
-              }}
-              title="Rotate (R) - Select a shape and edit rotation in sidebar"
+              variant={activeTool === 'rotate' ? 'default' : 'ghost'}
+              className={`w-9 h-9 p-0 ${activeTool === 'rotate' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+              onClick={() => setActiveTool('rotate')}
+              title="Rotate (R)"
             >
               <RotateCcw className="w-4 h-4" />
             </Button>
             <Button
               size="sm"
-              variant="ghost"
-              className={`w-9 h-9 p-0 ${activeTool === 'scale' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
-              onClick={() => {
-                setActiveTool('scale')
-                if (editor.selectedFeatureIds.length > 0) {
-                  setShowPropertiesPanel(true)
-                }
-              }}
-              title="Scale (S) - Select a shape and edit dimensions in sidebar"
+              variant={activeTool === 'scale' ? 'default' : 'ghost'}
+              className={`w-9 h-9 p-0 ${activeTool === 'scale' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+              onClick={() => setActiveTool('scale')}
+              title="Scale (S)"
             >
               <Maximize2 className="w-4 h-4" />
             </Button>
             <div className="h-px bg-slate-200 my-1" />
             <Button
               size="sm"
-              variant="ghost"
-              className={`w-9 h-9 p-0 ${activeTool === 'pan' ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'hover:bg-slate-100'}`}
+              variant={activeTool === 'pan' ? 'default' : 'ghost'}
+              className={`w-9 h-9 p-0 ${activeTool === 'pan' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
               onClick={() => setActiveTool('pan')}
               title="Pan (H)"
             >
@@ -1971,12 +1292,9 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant="ghost"
-              className="w-9 h-9 p-0 hover:bg-slate-100"
-              onClick={() => {
-                // Reset to 3D view which will reposition camera
-                setViewMode('3d')
-              }}
-              title="Reset View (F)"
+              className="w-9 h-9 p-0"
+              onClick={() => {/* Zoom to fit */}}
+              title="Zoom to Fit (F)"
             >
               <ZoomIn className="w-4 h-4" />
             </Button>
@@ -1984,7 +1302,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant="ghost"
-              className="w-9 h-9 p-0 hover:bg-slate-100"
+              className="w-9 h-9 p-0"
               onClick={() => {
                 if (editor.selectedFeatureIds.length > 0) {
                   setShowPropertiesPanel(!showPropertiesPanel)
@@ -2002,7 +1320,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === '3d' ? 'default' : 'ghost'}
-              className={editor.viewMode === '3d' ? 'bg-brand-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === '3d' ? 'bg-teal-600 hover:bg-teal-700' : ''}
               onClick={() => setViewMode('3d')}
             >
               <Move3d className="w-4 h-4 mr-1" />
@@ -2011,7 +1329,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'front' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'front' ? 'bg-brand-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === 'front' ? 'bg-teal-600 hover:bg-teal-700' : ''}
               onClick={() => setViewMode('front')}
             >
               Front
@@ -2019,7 +1337,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'top' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'top' ? 'bg-brand-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === 'top' ? 'bg-teal-600 hover:bg-teal-700' : ''}
               onClick={() => setViewMode('top')}
             >
               Top
@@ -2027,7 +1345,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'right' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'right' ? 'bg-brand-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === 'right' ? 'bg-teal-600 hover:bg-teal-700' : ''}
               onClick={() => setViewMode('right')}
             >
               Right
@@ -2035,7 +1353,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={editor.viewMode === 'isometric' ? 'default' : 'ghost'}
-              className={editor.viewMode === 'isometric' ? 'bg-brand-600 hover:bg-brand-700' : ''}
+              className={editor.viewMode === 'isometric' ? 'bg-teal-600 hover:bg-teal-700' : ''}
               onClick={() => setViewMode('isometric')}
             >
               <Rotate3d className="w-4 h-4 mr-1" />
@@ -2048,7 +1366,7 @@ export default function EditorPage() {
             <Button
               size="sm"
               variant={project.settings.showGrid ? 'default' : 'ghost'}
-              className={project.settings.showGrid ? 'bg-brand-600 hover:bg-brand-700' : ''}
+              className={project.settings.showGrid ? 'bg-teal-600 hover:bg-teal-700' : ''}
               onClick={() => updateProject(projectId, {
                 settings: { ...project.settings, showGrid: !project.settings.showGrid }
               })}
@@ -2106,7 +1424,7 @@ export default function EditorPage() {
           <div className="w-80 flex flex-col h-full" style={{ opacity: rightSidebarOpen ? 1 : 0, transition: 'opacity 150ms ease-out' }}>
             <div className="p-3 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
               <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-brand-600" />
+                <MessageSquare className="w-4 h-4 text-teal-600" />
                 AI Assistant
               </h2>
             </div>
@@ -2128,16 +1446,8 @@ export default function EditorPage() {
                 {editor.isGenerating && (
                   <div className="flex justify-start">
                     <div className="bg-slate-100 rounded-lg px-3 py-2 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-brand-600" />
+                      <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
                       <span className="text-sm text-slate-500">Generating...</span>
-                    </div>
-                  </div>
-                )}
-                {isAnalyzingImage && (
-                  <div className="flex justify-start">
-                    <div className="bg-slate-100 rounded-lg px-3 py-2 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-brand-600" />
-                      <span className="text-sm text-slate-500">Analyzing image...</span>
                     </div>
                   </div>
                 )}
@@ -2145,90 +1455,24 @@ export default function EditorPage() {
               </div>
             </ScrollArea>
 
-            <div className="p-3 border-t border-slate-200 flex-shrink-0 space-y-2">
-              {/* Image Preview */}
-              {imagePreview && (
-                <div className="relative inline-block">
-                  <img
-                    src={imagePreview}
-                    alt="Selected image"
-                    className="max-h-32 rounded-lg border border-slate-200"
-                  />
-                  <button
-                    onClick={clearSelectedImage}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                    title="Remove image"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-
-              {/* Input Row */}
+            <div className="p-3 border-t border-slate-200 flex-shrink-0">
               <div className="flex gap-2">
-                {/* Hidden file input */}
-                <input
-                  type="file"
-                  ref={imageInputRef}
-                  onChange={handleImageSelect}
-                  accept="image/jpeg,image/png,image/jpg"
-                  className="hidden"
-                />
-
-                {/* Image upload button */}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={editor.isGenerating || isAnalyzingImage}
-                  title="Upload image to analyze"
-                  className="flex-shrink-0"
-                >
-                  <ImagePlus className="w-4 h-4" />
-                </Button>
-
                 <Input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder={selectedImage ? "Add description or click Analyze..." : "Describe a shape..."}
+                  placeholder="Describe a shape..."
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  disabled={editor.isGenerating || isAnalyzingImage}
+                  disabled={editor.isGenerating}
                   className="flex-1"
                 />
-
-                {/* Conditional button: Analyze if image selected, otherwise Send */}
-                {selectedImage ? (
-                  <Button
-                    onClick={handleAnalyzeImage}
-                    disabled={isAnalyzingImage}
-                    className="bg-brand-600 hover:bg-brand-700"
-                  >
-                    {isAnalyzingImage ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-1" />
-                        Analyze
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!chatInput.trim() || editor.isGenerating}
-                    className="bg-brand-600 hover:bg-brand-700"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                )}
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!chatInput.trim() || editor.isGenerating}
+                  className="bg-teal-600 hover:bg-teal-700"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
               </div>
-
-              {/* Help text */}
-              {selectedImage && (
-                <p className="text-xs text-slate-500">
-                  Upload an image of a geometric shape to recreate it as CAD
-                </p>
-              )}
             </div>
           </div>
         </aside>

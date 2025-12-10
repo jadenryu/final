@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Patch, PrimitiveContent } from './types'
+const mod = require('three-bvh-csg')
 
 // ============================================================================
 // Project Types
@@ -78,6 +79,7 @@ interface CADStore {
   addFeature: (projectId: string, feature: Feature) => void
   updateFeature: (projectId: string, featureId: string, updates: Partial<Feature>) => void
   deleteFeature: (projectId: string, featureId: string) => void
+  booleanFeature: (projectId: string, targetFeatureId: string, tool: 'UNION' | 'SUBTRACT' | 'INTERSECT', sourceFeatureId: string) => void
   reorderFeatures: (projectId: string, featureIds: string[]) => void
   toggleFeatureVisibility: (projectId: string, featureId: string) => void
   toggleFeatureSuppression: (projectId: string, featureId: string) => void
@@ -206,13 +208,78 @@ export const useCADStore = create<CADStore>()(
 
       // Feature Actions
       addFeature: (projectId, feature) => {
-        set(state => ({
-          projects: state.projects.map(p =>
-            p.id === projectId
-              ? { ...p, features: [...p.features, feature], updatedAt: new Date() }
-              : p
-          )
-        }))
+        set(state => {
+          const projects = state.projects.map(p => {
+            if (p.id !== projectId) return p
+
+            // Check if this is a boolean operation
+            const content = feature.patch.content as any
+            if (content.primitive === 'union' || content.primitive === 'subtract' || content.primitive === 'intersect') {
+              // Perform CSG operation
+              try {
+                const { Evaluator, Brush, ADDITION, SUBTRACTION, INTERSECTION } = mod
+
+                const targetFeature = p.features.find(f => f.id === content.target_id)
+                const toolFeature = p.features.find(f => f.id === content.tool_id)
+
+                if (!targetFeature || !toolFeature) {
+                  console.error('Boolean operation: target or tool feature not found')
+                  return p
+                }
+
+                // Get or create geometries for both features
+                const targetGeom = (targetFeature.patch as any)?.geometry
+                const toolGeom = (toolFeature.patch as any)?.geometry
+
+                if (!targetGeom || !toolGeom) {
+                  console.error('Boolean operation: missing geometry on features')
+                  return p
+                }
+
+                const targetBrush = new Brush(targetGeom)
+                const toolBrush = new Brush(toolGeom)
+                targetBrush.updateMatrixWorld()
+                toolBrush.updateMatrixWorld()
+
+                const evaluator = new Evaluator()
+
+                const op =
+                  content.primitive === 'union' ? ADDITION :
+                  content.primitive === 'subtract' ? SUBTRACTION :
+                  INTERSECTION
+
+                const resultMesh = evaluator.evaluate(targetBrush, toolBrush, op)
+
+                // Store the resulting geometry on the feature patch
+                const updatedFeature: Feature = {
+                  ...feature,
+                  patch: {
+                    ...feature.patch,
+                    content: {
+                      ...content,
+                      // Keep the original IDs for reference
+                    },
+                    geometry: resultMesh.geometry
+                  } as any
+                }
+
+                return {
+                  ...p,
+                  features: [...p.features, updatedFeature],
+                  updatedAt: new Date()
+                }
+              } catch (error) {
+                console.error('Boolean operation failed:', error)
+                return p
+              }
+            }
+
+            // Regular feature addition
+            return { ...p, features: [...p.features, feature], updatedAt: new Date() }
+          })
+
+          return { ...state, projects }
+        })
       },
 
       updateFeature: (projectId, featureId, updates) => {
@@ -236,10 +303,10 @@ export const useCADStore = create<CADStore>()(
           projects: state.projects.map(p =>
             p.id === projectId
               ? {
-                  ...p,
-                  features: p.features.filter(f => f.id !== featureId),
-                  updatedAt: new Date()
-                }
+            ...p,
+            features: p.features.filter(f => f.id !== featureId),
+            updatedAt: new Date()
+          }
               : p
           ),
           editor: {
@@ -247,9 +314,73 @@ export const useCADStore = create<CADStore>()(
             selectedFeatureIds: state.editor.selectedFeatureIds.filter(id => id !== featureId)
           }
         }))
-      },
+            },
+            
+            booleanFeature: (projectId, targetFeatureId, tool, sourceFeatureId) => {
+        set(state => {
+          // Lazy import to avoid bundling three-bvh-csg into non-CAD flows
+          let Evaluator: any, Brush: any, ADDITION: any, SUBTRACTION: any, INTERSECTION: any
+          try {
+            Evaluator = mod.Evaluator
+            Brush = mod.Brush
+            ADDITION = mod.ADDITION
+            SUBTRACTION = mod.SUBTRACTION
+            INTERSECTION = mod.INTERSECTION
+          } catch {
+            // If the lib isn't available just return state unchanged
+            return state
+          }
 
-      reorderFeatures: (projectId, featureIds) => {
+          const projects = state.projects.map(p => {
+            if (p.id !== projectId) return p
+
+            const targetFeature = p.features.find(f => f.id === targetFeatureId)
+            const sourceFeature = p.features.find(f => f.id === sourceFeatureId)
+            if (!targetFeature || !sourceFeature) return p
+
+            // Expect geometries to be present on feature patches
+            const targetGeom = (targetFeature.patch as any)?.geometry
+            const sourceGeom = (sourceFeature.patch as any)?.geometry
+            if (!targetGeom || !sourceGeom) return p
+
+            const targetBrush = new Brush(targetGeom)
+            const sourceBrush = new Brush(sourceGeom)
+            targetBrush.updateMatrixWorld()
+            sourceBrush.updateMatrixWorld()
+
+            const evaluator = new Evaluator()
+
+            const op =
+              tool === 'UNION' ? ADDITION :
+              tool === 'SUBTRACT' ? SUBTRACTION :
+              INTERSECTION
+
+            const resultMesh = evaluator.evaluate(targetBrush, sourceBrush, op)
+
+            const updatedFeature: Feature = {
+              ...targetFeature,
+              patch: {
+          feature_id: targetFeatureId,
+          action: tool,
+          // Store resulting geometry for downstream rendering
+          content: (resultMesh.geometry as unknown as PrimitiveContent),
+          // Also keep geometry on patch for future boolean ops
+          ...( { geometry: resultMesh.geometry } as any )
+              } as Patch
+            }
+
+            return {
+              ...p,
+              features: p.features.map(f => (f.id === targetFeatureId ? updatedFeature : f)),
+              updatedAt: new Date()
+            }
+          })
+
+          return { ...state, projects }
+        })
+            },
+
+            reorderFeatures: (projectId, featureIds) => {
         set(state => ({
           projects: state.projects.map(p => {
             if (p.id !== projectId) return p

@@ -132,3 +132,6 @@ AT revolve_01 INSERT {"primitive":"revolve","sketch_id":"sketch_01","segments":3
 - Positions are local coordinates, relative to world origin or parent feature.
 - Patch actions are deterministic and allow incremental AI reasoning.
 - LLMs can combine primitives and features creatively; this minimal DSL is enough f
+
+
+

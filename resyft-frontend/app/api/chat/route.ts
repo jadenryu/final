@@ -5,26 +5,47 @@ import path from 'path'
 
 export const runtime = 'nodejs'
 
-
+// Load prompt file safely
 let CAD_SYSTEM_PROMPT = ''
-const promptPath = path.join(process.cwd(), 'prompt.txt')
-CAD_SYSTEM_PROMPT = fs.readFileSync(promptPath, 'utf-8')
+try {
+  const promptPath = path.join(process.cwd(), 'prompt.txt')
+  if (fs.existsSync(promptPath)) {
+    CAD_SYSTEM_PROMPT = fs.readFileSync(promptPath, 'utf-8')
+  } else {
+    console.warn('prompt.txt not found at:', promptPath)
+    // Fallback prompt
+    CAD_SYSTEM_PROMPT = `You are a CAD assistant that helps create 3D shapes.
+When the user asks you to create shapes, respond with:
+1. An <explanation> block describing what you're creating
+2. A <dsl> block with commands in this format:
+   AT feat_001 INSERT {"primitive": "cube", "width": 10, "height": 10, "depth": 10, "position": [0, 0, 0], "rotation": [0, 0, 0], "color": "#14b8a6"}
+
+Supported primitives: cube, sphere, cylinder, cone, torus, pyramid, capsule, etc.
+Always include position as [x, y, z] and rotation as [x, y, z] in degrees.`
+  }
+} catch (err) {
+  console.error('Error loading prompt.txt:', err)
+  CAD_SYSTEM_PROMPT = 'You are a helpful CAD assistant.'
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, conversation_history = [], userId, imageAnalysis, sceneContext = [] } = await request.json()
+    const body = await request.json()
+    const { message, conversation_history = [], userId, imageAnalysis, sceneContext = [] } = body
 
     const apiKey = process.env.XAI_API_KEY
 
     if (!apiKey) {
-      throw new Error('XAI API key not configured')
+      return NextResponse.json(
+        { error: 'API key not configured', details: 'XAI_API_KEY environment variable is not set' },
+        { status: 500 }
+      )
     }
 
     // Filter conversation history to only include system context and recent user/assistant pairs
-    // This prevents the AI from getting confused by long histories
     const filteredHistory = conversation_history.filter((msg: any) =>
       msg.role === 'system' || msg.role === 'user' || msg.role === 'assistant'
-    ).slice(-4) // Only keep last 4 messages
+    ).slice(-4)
 
     // RAG: Find matching design patterns based on user's request
     let patternContext = ''
@@ -152,7 +173,11 @@ The workspace is empty. You can place shapes at the origin [0, 0, 0] or wherever
 
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`xAI API error: ${response.status} - ${errorText}`)
+      console.error('xAI API error:', response.status, errorText)
+      return NextResponse.json(
+        { error: 'AI API error', details: `${response.status}: ${errorText.substring(0, 200)}` },
+        { status: 502 }
+      )
     }
 
     const data = await response.json()

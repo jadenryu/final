@@ -1,32 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { findMatchingPatterns, formatPatternsForContext } from '../../../lib/cad/design-patterns'
-import fs from 'fs'
-import path from 'path'
-
+import { CAD_SYSTEM_PROMPT } from './prompt'
 export const runtime = 'nodejs'
 
 // Load prompt file safely
-let CAD_SYSTEM_PROMPT = ''
-try {
-  const promptPath = path.join(process.cwd(), 'prompt.txt')
-  if (fs.existsSync(promptPath)) {
-    CAD_SYSTEM_PROMPT = fs.readFileSync(promptPath, 'utf-8')
-  } else {
-    console.warn('prompt.txt not found at:', promptPath)
-    // Fallback prompt
-    CAD_SYSTEM_PROMPT = `You are a CAD assistant that helps create 3D shapes.
-When the user asks you to create shapes, respond with:
-1. An <explanation> block describing what you're creating
-2. A <dsl> block with commands in this format:
-   AT feat_001 INSERT {"primitive": "cube", "width": 10, "height": 10, "depth": 10, "position": [0, 0, 0], "rotation": [0, 0, 0], "color": "#14b8a6"}
+// Load the CAD system prompt from a local file at startup (static content)
+// Place prompt.txt in app/api/chat/prompt.txt or move it to /public/prompt.txt and adjust the path accordingly.
 
-Supported primitives: cube, sphere, cylinder, cone, torus, pyramid, capsule, etc.
-Always include position as [x, y, z] and rotation as [x, y, z] in degrees.`
-  }
-} catch (err) {
-  console.error('Error loading prompt.txt:', err)
-  CAD_SYSTEM_PROMPT = 'You are a helpful CAD assistant.'
-}
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -158,7 +139,7 @@ The workspace is empty. You can place shapes at the origin [0, 0, 0] or wherever
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-3-fast',
+        model: 'grok-4-1-fast-non-reasoning',
         messages: messages,
         temperature: 0.7,
         max_tokens: 2000,

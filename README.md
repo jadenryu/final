@@ -1,10 +1,12 @@
-# Resyft
+# modlr
 
 <div align="center">
   
   **AI-Powered CAD Design Tool**
   
   A production-ready CAD application that translates natural language into 3D designs using AI. Describe what you want to build, and watch it come to life.
+  
+  *Built for the xAI Hackathon (December 2025)*
   
   [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
   [![Next.js 15](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
